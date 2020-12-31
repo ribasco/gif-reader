@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
  * Decode's LZW encoded image blocks
  *
  * @author Rafael Luis Ibasco
+ * @implNote Parts of the code below have been borrowed from Dhyan Blum's GIF Decoder implementation
  */
 class GifImageDecoder {
 

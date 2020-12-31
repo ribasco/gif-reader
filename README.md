@@ -1,6 +1,10 @@
 ### GIF Decoding Library
 
-A pure java implementation of the  [GIF89a specification](https://www.w3.org/Graphics/GIF/spec-gif89a.txt)
+A pure java implementation of the  [GIF89a specification](https://www.w3.org/Graphics/GIF/spec-gif89a.txt). 
+
+#### Minimum version required
+
+JDK 11+
 
 #### Usage:
 
