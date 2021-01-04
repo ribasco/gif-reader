@@ -349,7 +349,7 @@ public class GifImageReader implements AutoCloseable {
             throw new InvalidSignatureException(String.format("Invalid GIF signature (Expected: %s, Actual: %s)", toHexString(HEADER_SIGNATURE), toHexString(signature)));
 
         if (!Arrays.equals(version, HEADER_VERSION_87A) && !Arrays.equals(version, HEADER_VERSION_89A))
-            throw new IOException("Invalid/Unsupported GIF version: " + new String(version));
+            throw new InvalidSignatureException("Invalid/Unsupported GIF version: " + new String(version));
 
         if (metadata != null) {
             metadata.signature = signature;
