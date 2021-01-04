@@ -1,4 +1,4 @@
-package com.ibasco.gifdecoder.exceptions;
+package com.ibasco.image.gif.exceptions;
 
 import java.io.IOException;
 

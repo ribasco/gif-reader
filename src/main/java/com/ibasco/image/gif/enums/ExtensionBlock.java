@@ -1,4 +1,4 @@
-package com.ibasco.gifdecoder.enums;
+package com.ibasco.image.gif.enums;
 
 import java.util.Arrays;
 
@@ -7,7 +7,8 @@ import java.util.Arrays;
  *
  * @author Rafael Luis Ibasco
  */
-public enum ExtensionBlock {
+public enum ExtensionBlock implements BlockIdentifier {
+
     GRAPHICS(0xF9, "Graphics Extension Block"),
     COMMENT(0xFE, "Comment Extension Block"),
     PLAINTEXT(0x01, "PlainText Extension Block"),
@@ -23,12 +24,19 @@ public enum ExtensionBlock {
         this.name = name;
     }
 
-    String getName() {
-        return name;
+    @Override
+    public int getCodeInt() {
+        return code;
     }
 
-    int getCode() {
-        return code;
+    @Override
+    public byte getCodeByte() {
+        return (byte) code;
+    }
+
+    @Override
+    public String getName() {
+        return this.name;
     }
 
     public static ExtensionBlock get(int code) {

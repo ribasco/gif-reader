@@ -1,9 +1,10 @@
-package com.ibasco.gifdecoder;
+package com.ibasco.image.gif;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.ref.WeakReference;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 /**
  * LZW code dictionary class
@@ -18,7 +19,7 @@ public final class GifCodeTable {
 
     private static final int CODE_SIZE_LIMIT = 12;
 
-    private int[][] table; // Maps codes to lists of colors (max size: 4096)
+    private final int[][] table; // Maps codes to lists of colors (max size: 4096)
 
     private int firstCodeOffset; // Number of colors +2 for CLEAR + EOI
 
@@ -32,45 +33,41 @@ public final class GifCodeTable {
 
     private int nextCodeLimit; // Increase codeSize when nextCode == limit
 
-    private WeakReference<GifCodeReader> readerRef;
+    private GifCodeReader reader;
 
-    private WeakReference<GifFrame> frameRef;
+    private GifFrame frame;
 
     public GifCodeTable() {
-        this.table = new int[MAX_CODE_VALUE][1];
+        this.table = new int[MAX_CODE_VALUE + 1][1];
     }
 
     public void acquire(final GifFrame frame, final GifCodeReader reader) {
         if (getFrame(true) != null || getReader(true) != null)
             throw new IllegalStateException(String.format("Acquired resources have not been released yet (Frame: %s, Reader: %s)", frame, reader));
-
-        this.table = new int[MAX_CODE_VALUE][1];
-        this.readerRef = new WeakReference<>(reader);
-        this.frameRef = new WeakReference<>(frame);
+        this.reader = reader;
+        this.frame = frame;
 
         //initialize properties
         initCodeSize = frame.getCodeSize() + 1;
         initCodeLimit = (1 << initCodeSize) - 1; // 2 ^ initCodeSize - 1
+        log.debug("END OF INFO + 1 = {}, CLEAR CODE + 2 = {}", frame.getEndOfInfoCode() + 1, frame.getClearCode() + 2);
         firstCodeOffset = frame.getClearCode() + 2; //The first available compression code value per spec (see appendix f)
 
-        codeSize = initCodeSize;
-        nextCodeLimit = initCodeLimit;
-        nextCode = firstCodeOffset;
-        getReader().clearCodeSizeOffset();
+        //Clear entries
+        clearTable();
 
         //reset/initialize properties
-        //reset();
+        reset();
 
         populateColorTable(frame);
     }
 
-    public void addPrevious(final int[] indices) {
-        //min: 0, max: 4094
-        if (nextCode > (MAX_CODE_VALUE - 1)) {
+    public void addEntry(final int[] indices) {
+        //min: 0, max: 4095 = 4096 entries
+        if (nextCode > MAX_CODE_VALUE) {
             //log.debug("Next code reached limit (Next code: {}, Limit: {}", nextCode, 4095);
             return;
         }
-
         /*
          * The output codes are of variable length, starting at <code size>+1 bits per
          * code, up to 12 bits per code. This defines a maximum code value of 4095
@@ -79,16 +76,29 @@ public final class GifCodeTable {
          * be altered to reflect the new code length.
          */
         if ((nextCode >= nextCodeLimit) && (codeSize < CODE_SIZE_LIMIT)) {
-            //log.debug("The Next code has reached it's limit (Next code: {}, Next code limit: {}, Code Size: {})", nextCode, nextCodeLimit, codeSize);
             codeSize++; // Max code size is 12
             getReader().increaseCodeSizeOffset();
             nextCodeLimit = (1 << codeSize) - 1; // 2^codeSize - 1
         }
+        table[nextCode++] = indices;
 
-        table[nextCode] = indices;
+        //printIntArray("CODE: " + (nextCode - 1), table[nextCode - 1]);
 
-        //advance next code
-        nextCode++;
+    }
+
+    private void printIntArray(String header, final int[] array) {
+        var str = Arrays.stream(array).mapToObj(Integer::toHexString).map(String::toUpperCase).collect(Collectors.joining(", "));
+        log.debug("{} = {}", header, str);
+    }
+
+    private void clearTable() {
+        for (int x = 0; x < table.length; x++) {
+            if (table[x].length == 1) {
+                table[x][0] = 0;
+            } else {
+                table[x] = new int[1];
+            }
+        }
     }
 
     public void reset() {
@@ -98,14 +108,19 @@ public final class GifCodeTable {
         nextCodeLimit = initCodeLimit;
         nextCode = firstCodeOffset;
         getReader().clearCodeSizeOffset();
+
+        log.debug("Reset: Code Size = {}", codeSize);
+        log.debug("Reset: Next Code Limit = {}", nextCodeLimit);
+        log.debug("Reset: Next Code = {}", nextCode);
+        log.debug("Reset: Clear Offset = {}", getReader().getCodeSize());
     }
 
     public void release() {
         if (getReader(true) == null && getFrame(true) == null)
             throw new IllegalStateException("Resources have not been aquired");
         reset();
-        this.readerRef = null;
-        this.frameRef = null;
+        this.reader = null;
+        this.frame = null;
     }
 
     public int getNextCode() {
@@ -114,6 +129,10 @@ public final class GifCodeTable {
 
     public int[] getPixels(int code) {
         return table[code];
+    }
+
+    public int[][] getTable() {
+        return table;
     }
 
     private void populateColorTable(GifFrame frame) {
@@ -125,7 +144,6 @@ public final class GifCodeTable {
         //copy the frame's acive color table to the internal color table
         for (int colorIndex = numColors - 1; colorIndex >= 0; colorIndex--) {
             table[colorIndex][0] = activeColorTable[colorIndex]; // Translated color
-            //log.debug("Code Table: Index: {} = {} (Length: {})", colorIndex, GifImageReader.toHexString(table[colorIndex][0]), table[colorIndex].length);
         } // A gap may follow with no colors assigned if numCols < CLEAR
 
         //add the last two special codes, per spec
@@ -143,7 +161,6 @@ public final class GifCodeTable {
     }
 
     private GifCodeReader getReader(boolean unchecked) {
-        var reader = readerRef != null && readerRef.get() != null ? readerRef.get() : null;
         if (!unchecked && reader == null)
             throw new IllegalStateException("Reader not assigned");
         return reader;
@@ -154,7 +171,6 @@ public final class GifCodeTable {
     }
 
     private GifFrame getFrame(boolean unchecked) {
-        var frame = frameRef != null && frameRef.get() != null ? frameRef.get() : null;
         if (!unchecked && frame == null)
             throw new IllegalStateException("Frame not assigned");
         return frame;

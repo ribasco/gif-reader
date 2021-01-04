@@ -1,8 +1,14 @@
-package com.ibasco.gifdecoder.util;
+package com.ibasco.image.gif.util;
 
-import com.ibasco.gifdecoder.GifFrame;
+import com.ibasco.image.gif.GifFrame;
 
-public final class GifUtils {
+/**
+ * Utility methods for GIF related operations
+ *
+ * @author Rafael Luis Ibasco
+ */
+public final class ImageOps {
+
     //borrowed from Dhyan Blum's GifDecoder implementation
     public static int[] deinterlace(final GifFrame frame) {
         final int[] src = frame.getData();

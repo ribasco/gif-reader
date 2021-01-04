@@ -1,4 +1,4 @@
-package com.ibasco.gifdecoder;
+package com.ibasco.image.gif;
 
 import java.util.List;
 
@@ -7,7 +7,7 @@ import java.util.List;
  *
  * @author Rafael Luis Ibasco
  */
-public class GifPlainText {
+public class PlainText {
 
     int leftPos;
 

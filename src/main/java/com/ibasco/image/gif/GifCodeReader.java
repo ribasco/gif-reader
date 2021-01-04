@@ -1,8 +1,10 @@
-package com.ibasco.gifdecoder;
+package com.ibasco.image.gif;
+
+import java.io.IOException;
 
 public interface GifCodeReader {
 
-    int read();
+    int read() throws IOException;
 
     int getCodeSize();
 
@@ -11,4 +13,6 @@ public interface GifCodeReader {
     void increaseCodeSizeOffset();
 
     void clearCodeSizeOffset();
+
+    void close() throws IOException;
 }

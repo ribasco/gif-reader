@@ -1,11 +1,23 @@
-package com.ibasco.gifdecoder;
+package com.ibasco.image.gif;
 
-import java.util.ArrayList;
 import java.util.List;
 
-public class GifImage {
-
-    private final List<GifFrame> frames = new ArrayList<>();
+/**
+ * The image meta data describing the entire image stream.
+ * <p>
+ * Includes the following category of information:
+ *
+ * <ul>
+ *     <li>Signature/Version</li>
+ *     <li>Logical Screen Descriptor</li>
+ *     <li>Netscape's applicaiton extension loop count field (if available)</li>
+ *     <li>Plain Text Data</li>
+ *     <li>Comment Data</li>
+ * </ul>
+ *
+ * @author Rafael Luis Ibasco
+ */
+public class GifMetaData {
 
     byte[] signature;
 
@@ -29,11 +41,20 @@ public class GifImage {
 
     int globalColorTableSize;
 
-    GifPlainText plainText;
+    PlainText plainText;
 
     List<String> comments;
 
     int loopCount = 0;
+
+    int totalFrames;
+
+    /**
+     * @return The total number of frames found in this data stream
+     */
+    public int getTotalFrames() {
+        return totalFrames;
+    }
 
     /**
      * The Comment Extension contains textual information which
@@ -49,7 +70,7 @@ public class GifImage {
     }
 
     /**
-     * Indicates the number of iterations the animated GIF should be executed.
+     * Indicates the number of iterations the animated GIF should be executed. This value is extracted from Netscape's application extension block.
      *
      * @return The number of times the image should be looped or 0 for infinite number.
      */
@@ -85,7 +106,7 @@ public class GifImage {
      * therefore it may be modified by a Graphic Control Extension.  This block
      * is OPTIONAL; any number of them may appear in the Data Stream.
      */
-    public GifPlainText getPlainText() {
+    public PlainText getPlainText() {
         return plainText;
     }
 
@@ -143,7 +164,7 @@ public class GifImage {
      * be used as the table index of the background color. (This field is
      * the most significant bit of the byte.)
      */
-    boolean hasGlobalColorTable() {
+    public boolean hasGlobalColorTable() {
         return globalColorTableFlag;
     }
 
@@ -192,9 +213,8 @@ public class GifImage {
      * @return The background color in int ARGB format
      */
     public int getBackgroundColor() {
-        if (hasGlobalColorTable() && globalColorTableSize > 0) {
+        if (hasGlobalColorTable() && globalColorTableSize > 0)
             return globalColorTable[backgroundColorIndex];
-        }
         return -1;
     }
 
@@ -204,24 +224,42 @@ public class GifImage {
      * value of the field is not 0, this approximation of the aspect ratio
      * is computed based on the formula:
      * <p>
+     * <pre>
      * Aspect Ratio = (Pixel Aspect Ratio + 15) / 64
+     * </pre>
      * <p>
      * The Pixel Aspect Ratio is defined to be the quotient of the pixel's
      * width over its height.  The value range in this field allows
      * specification of the widest pixel of 4:1 to the tallest pixel of
      * 1:4 in increments of 1/64th.
+     *
+     * @return 0 - No aspect ratio information is given.
      * <p>
-     * Values :        0 -   No aspect ratio information is given.
-     * 1..255 -   Value used in the computation.
+     * 1 to 255 - Value used in the computation.
      */
     public int getPixelAspectRatio() {
         return pixelAspectRatio;
     }
 
     /**
-     * The global color table (in ARGB format)
+     * The global color table (in <strong>ARGB format</strong>). It is a sequence of
+     * bytes representing red-green-blue color triplets. The Global Color Table
+     * is used by images without a Local Color Table and by Plain Text
+     * Extensions. Its presence is marked by the Global Color Table Flag being
+     * set to 1 in the Logical Screen Descriptor; if present, it immediately
+     * follows the Logical Screen Descriptor and contains a number of bytes
+     * equal to:
+     *
+     * <pre>
+     * 3 x 2^(Size of Global Color Table + 1).
+     * </pre>
+     *
+     * <p>
+     * This block is OPTIONAL; at most one Global Color Table may be present
+     * per Data Stream.
+     * </p>
      */
-    int[] getGlobalColorTable() {
+    public int[] getGlobalColorTable() {
         return globalColorTable;
     }
 
@@ -235,15 +273,8 @@ public class GifImage {
      * the best graphics mode to display the stream in.  (This field is
      * made up of the 3 least significant bits of the byte.)
      */
-    int getGlobalColorTableSize() {
+    public int getGlobalColorTableSize() {
         return globalColorTableSize;
-    }
-
-    /**
-     * @return A list of all available frames in this image
-     */
-    public List<GifFrame> getFrames() {
-        return frames;
     }
 
     @Override

@@ -1,4 +1,4 @@
-package com.ibasco.gifdecoder;
+package com.ibasco.image.gif;
 
 import org.apache.commons.compress.utils.BitInputStream;
 import org.slf4j.Logger;
@@ -15,16 +15,17 @@ public class BitInputStreamGifCodeReader extends BaseGifCodeReader {
     private final BitInputStream bis;
 
     public BitInputStreamGifCodeReader(int codeSize, byte[] data) {
-        super(codeSize, data);
+        super(codeSize);
         this.bis = new BitInputStream(new ByteArrayInputStream(data), ByteOrder.nativeOrder());
     }
 
     @Override
-    public int read() {
-        try {
-            return (int) bis.readBits(getCodeSize());
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
+    public int read() throws IOException {
+        return (int) bis.readBits(getCodeSize());
+    }
+
+    @Override
+    public void close() throws IOException {
+        bis.close();
     }
 }

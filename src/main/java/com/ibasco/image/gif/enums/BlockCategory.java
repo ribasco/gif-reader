@@ -1,6 +1,6 @@
-package com.ibasco.gifdecoder.enums;
+package com.ibasco.image.gif.enums;
 
-import com.ibasco.gifdecoder.exceptions.UnsupportedBlockException;
+import com.ibasco.image.gif.exceptions.UnsupportedBlockException;
 
 public enum BlockCategory {
     CONTROL(0x80, 0xF9),

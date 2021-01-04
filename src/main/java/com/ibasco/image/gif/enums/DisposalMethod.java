@@ -1,6 +1,4 @@
-package com.ibasco.gifdecoder.enums;
-
-import java.util.Arrays;
+package com.ibasco.image.gif.enums;
 
 /**
  * Indicates the way in which the graphic is to be treated after being displayed.

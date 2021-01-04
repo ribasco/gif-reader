@@ -35,7 +35,6 @@ try (var reader = new GifImageReader(source)) {
         var frameImage = toFxImage(frame);
         //do what you wan with frameImage
     }
-    return builder.build();
 }
 
 private static WritableImage toFxImage(GifFrame frame) {

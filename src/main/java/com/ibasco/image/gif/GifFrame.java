@@ -1,15 +1,15 @@
-package com.ibasco.gifdecoder;
+package com.ibasco.image.gif;
 
-import com.ibasco.gifdecoder.enums.DisposalMethod;
+import com.ibasco.image.gif.enums.DisposalMethod;
 
 /**
- * Represents a signle frame of a GIF Image
+ * Represents a single frame of a GIF Image
  *
  * @author Rafael Luis Ibasco
  */
 public class GifFrame {
 
-    final GifImage image;
+    final GifMetaData metadata;
 
     int[] data;
 
@@ -23,6 +23,7 @@ public class GifFrame {
 
     int transparencyIndex;
 
+    //<editor-fold desc="Image Descriptor Fields">
     int leftPos;
 
     int topPos;
@@ -40,6 +41,7 @@ public class GifFrame {
     int localColorTableSize;
 
     int[] localColorTable;
+    //</editor-fold>
 
     int codeSize;
 
@@ -49,8 +51,8 @@ public class GifFrame {
 
     int index;
 
-    GifFrame(int index, GifImage image) {
-        this.image = image;
+    GifFrame(int index, GifMetaData metadata) {
+        this.metadata = metadata;
         this.index = index;
     }
 
@@ -67,11 +69,11 @@ public class GifFrame {
      * @return The active color table containing an array of codes. The local color table will take priority if
      * the {@code localColorTableFlag} is set, otherwise the global color table will be used instead.
      */
-    int[] getActiveColorTable() {
+    public int[] getActiveColorTable() {
         if (hasLocalColorTable()) {
             return localColorTable;
         } else {
-            var image = getImage();
+            var image = getMetadata();
             if (image.hasGlobalColorTable()) {
                 return image.getGlobalColorTable();
             }
@@ -80,18 +82,37 @@ public class GifFrame {
     }
 
     /**
+     * <p>
      * Indicates the way in which the graphic is to be treated after being displayed.
-     *
-     * <pre>
-     *     0 -   No disposal specified. The decoder is not required to take any action.
-     *     1 -   Do not dispose. The graphic is to be left in place.
-     *     2 -   Restore to background color. The area used by the
-     *           graphic must be restored to the background color.
-     *     3 -   Restore to previous. The decoder is required to
-     *           restore the area overwritten by the graphic with
-     *           what was there prior to rendering the graphic.
-     *     4-7 - To be defined.
-     * </pre>
+     * </p>
+     * <br />
+     * <table style="padding: 10px; border-collapse: collapse;" width="500">
+     *      <tr>
+     *          <th>Name</th>
+     *          <th>Value</th>
+     *          <th>Description</th>
+     *      </tr>
+     *      <tr>
+     *         <td>NONE</td>
+     *         <td>0</td>
+     *         <td>No disposal specified. The decoder is not required to take any action.</td>
+     *      </tr>
+     *      <tr>
+     *          <td>DO_NOT_DISPOSE</td>
+     *          <td>1</td>
+     *          <td>Do not dispose. The graphic is to be left in place.</td>
+     *      </tr>
+     *      <tr>
+     *          <td>RESTORE_TO_BACKGROUND</td>
+     *          <td>2</td>
+     *          <td>Restore to background color. The area used by the graphic must be restored to the background color.</td>
+     *      </tr>
+     *      <tr>
+     *          <td>RESTORE_TO_PREVIOUS</td>
+     *          <td>3</td>
+     *          <td>Restore to previous. The decoder is required to restore the area overwritten by the graphic with what was there prior to rendering the graphic.</td>
+     *      </tr>
+     * </table>
      */
     public DisposalMethod getDisposalMethod() {
         return disposalMethod;
@@ -113,7 +134,7 @@ public class GifFrame {
      * processing will continue when user input is received or when the
      * delay time expires, whichever occurs first.
      */
-    public boolean isUserInputSupporter() {
+    public boolean isUserInputSupported() {
         return userInputFlag;
     }
 
@@ -184,12 +205,8 @@ public class GifFrame {
      * Indicates the presence of a Local Color Table immediately
      * following this Image Descriptor. (This field is the most significant bit of the byte.)
      *
-     * <pre>
-     *  Values :    false - Local Color Table is not present. Use
-     *                      Global Color Table if available.
-     *              true -  Local Color Table present, and to follow
-     *                      immediately after this Image Descriptor.
-     * </pre>
+     * @return {@code True} - local color table present, and to follow immediately after this image descriptor. <p>
+     * {@code False} - local color table is not present. Use global color table if available.
      */
     public boolean hasLocalColorTable() {
         return localColorTableFlag;
@@ -199,10 +216,7 @@ public class GifFrame {
      * Indicates if the image is interlaced. An image is interlaced
      * in a four-pass interlace pattern; see Appendix E for details.
      *
-     * <pre>
-     *  Values :    false - Image is not interlaced.
-     *              true - Image is interlaced.
-     *  </pre>
+     * @return {@code True} - Image is interlaced
      */
     public boolean isInterlaced() {
         return interlaceFlag;
@@ -217,10 +231,10 @@ public class GifFrame {
      * choosing the best subset of colors; the decoder may use an initial segment of the table to
      * render the graphic.
      * </p>
-     * <pre>
-     * Values :    false - Not ordered.
-     *             true - Ordered by decreasing importance, most important color first.
-     * </pre>
+     *
+     * @return {@code True} - Ordered by decreasing importance, most important color first.
+     * <p>
+     * {@code False} - Not ordered
      */
     public boolean isSorted() {
         return sortFlag;
@@ -308,7 +322,7 @@ public class GifFrame {
     /**
      * @return The image metadata
      */
-    public GifImage getImage() {
-        return image;
+    public GifMetaData getMetadata() {
+        return metadata;
     }
 }

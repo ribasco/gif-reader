@@ -1,13 +1,26 @@
-package com.ibasco.gifdecoder.enums;
+package com.ibasco.image.gif.enums;
 
-import com.ibasco.gifdecoder.exceptions.UnsupportedBlockException;
+import com.ibasco.image.gif.exceptions.UnsupportedBlockException;
 
 import java.util.Arrays;
 
-public enum Block {
-    EXTENSION(0x21, "Extension Block"),
+public enum Block implements BlockIdentifier {
+
+    EXTENSION(0x21, "Extension"),
+
     IMAGE_DESCRIPTOR(0x2C, "Image Descriptor"),
-    TRAILER(0x3B, "Image Trailer");
+
+    TRAILER(0x3B, "Trailer"),
+
+    LOGICAL_SCREEN_DESCRIPTOR(0x3C, "Logical Screen Descriptor"), //non-official spec
+
+    LOCAL_COLOR_TABLE(0x3D, "Global Color Table"), //non-official spec
+
+    GLOBAL_COLOR_TABLE(0x3E, "Local Color Table"), //non-official spec
+
+    IMAGE_DATA(0x3F, "Image Data Block"), //non-official spec
+
+    INITIALIZE(0x40, "Initialize"); //non-official spec
 
     private final int code;
 
@@ -18,18 +31,17 @@ public enum Block {
         this.name = name;
     }
 
-    public BlockCategory getCategory() throws UnsupportedBlockException {
-        return BlockCategory.get(code);
-    }
-
+    @Override
     public int getCodeInt() {
         return code;
     }
 
+    @Override
     public byte getCodeByte() {
         return (byte) code;
     }
 
+    @Override
     public String getName() {
         return name;
     }

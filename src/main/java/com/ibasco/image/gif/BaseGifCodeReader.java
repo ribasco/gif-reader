@@ -1,4 +1,6 @@
-package com.ibasco.gifdecoder;
+package com.ibasco.image.gif;
+
+import java.io.IOException;
 
 abstract public class BaseGifCodeReader implements GifCodeReader {
 
@@ -8,7 +10,7 @@ abstract public class BaseGifCodeReader implements GifCodeReader {
 
     private int offset = 0;
 
-    public BaseGifCodeReader(int codeSize, byte[] data) {
+    public BaseGifCodeReader(int codeSize) {
         this.codeSize = codeSize + 1;
         this.fromIndex = 0;
     }
@@ -31,7 +33,7 @@ abstract public class BaseGifCodeReader implements GifCodeReader {
      * @return An unsigned 32-bit LZW encoded integer
      */
     @Override
-    abstract public int read();
+    abstract public int read() throws IOException;
 
     @Override
     public int getCodeSize() {
