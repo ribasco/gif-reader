@@ -4,7 +4,7 @@ A pure java implementation of the  [GIF89a specification](https://www.w3.org/Gra
 
 #### Motivation
 
-After testing some GIF decoding libraries available (ImageIO, Apache Commons Imaging, DhyanB) for Java, I found that there were still cases where some animated images were not processed or handled properly, resulting in deformation on the output image or simply returning in error. This library was developed with the intention of addressing these issues (e.g. `Bad Code`, `ArrayIndexOutOfBoundsException`).
+After testing some GIF decoding libraries available (ImageIO, Apache Commons Imaging) for Java, I found that there were still cases where some animated images were not processed or handled properly, resulting in deformation on the output image or simply returning in error. This library was developed with the intention of addressing these issues (e.g. `Bad Code`, `ArrayIndexOutOfBoundsException`).
 
 #### Minimum JDK Version
 
