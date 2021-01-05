@@ -94,106 +94,100 @@ All images used in this test can be found at the [samples](https://github.com/ri
 Note: A buffer overflow warning is shown below to indicate that the output data was trimmed by the decoder.
 
 ```text
-13:08:47.846 [main] INFO  com.ibasco.image.gif.GifReaderDemo - ====================================================
-13:08:47.850 [main] INFO  com.ibasco.image.gif.GifReaderDemo - START
-13:08:47.850 [main] INFO  com.ibasco.image.gif.GifReaderDemo - ====================================================
-13:08:48.059 [main] INFO  com.ibasco.image.gif.GifReaderDemo - Processed file: sample09-nsfw.gif (Total frames: 20)
-13:08:48.245 [main] INFO  com.ibasco.image.gif.GifReaderDemo - Processed file: sample03.gif (Total frames: 49)
-13:08:48.478 [main] INFO  com.ibasco.image.gif.GifReaderDemo - Processed file: sample05.gif (Total frames: 101)
-13:08:48.488 [main] INFO  com.ibasco.image.gif.GifReaderDemo - Processed file: sample06.gif (Total frames: 10)
-13:08:48.591 [main] INFO  com.ibasco.image.gif.GifReaderDemo - Processed file: sample02.gif (Total frames: 61)
-13:08:48.622 [main] INFO  com.ibasco.image.gif.GifReaderDemo - Processed file: sample04.gif (Total frames: 10)
+====================================================
+START
+====================================================
+Processed file: sample09-nsfw.gif (Total frames: 20)
+Processed file: sample03.gif (Total frames: 49)
+Processed file: sample05.gif (Total frames: 101)
+Processed file: sample06.gif (Total frames: 10)
+Processed file: sample02.gif (Total frames: 61)
+Processed file: sample04.gif (Total frames: 10)
 13:08:48.629 [main] WARN  com.ibasco.image.gif.GifDecoder - Buffer overflow: There is not enough space to store 2 elements in the output buffer. Data will be trimmed (Remaining Bytes: 1)
 13:08:48.648 [main] WARN  com.ibasco.image.gif.GifDecoder - Buffer overflow: There is not enough space to store 5 elements in the output buffer. Data will be trimmed (Remaining Bytes: 4)
-13:08:48.684 [main] INFO  com.ibasco.image.gif.GifReaderDemo - Processed file: sample08-nsfw.gif (Total frames: 24)
-13:08:48.745 [main] INFO  com.ibasco.image.gif.GifReaderDemo - Processed file: sample01.gif (Total frames: 30)
-13:08:48.754 [main] INFO  com.ibasco.image.gif.GifReaderDemo - Processed file: sample07.gif (Total frames: 3)
-13:08:48.755 [main] INFO  com.ibasco.image.gif.GifReaderDemo - ====================================================
-13:08:48.755 [main] INFO  com.ibasco.image.gif.GifReaderDemo - STATUS REPORT
-13:08:48.755 [main] INFO  com.ibasco.image.gif.GifReaderDemo - ====================================================
-13:08:48.755 [main] INFO  com.ibasco.image.gif.GifReaderDemo - FILE: sample09-nsfw.gif         FRAMES: 20   , ERROR: None
-13:08:48.755 [main] INFO  com.ibasco.image.gif.GifReaderDemo - FILE: sample03.gif              FRAMES: 49   , ERROR: None
-13:08:48.755 [main] INFO  com.ibasco.image.gif.GifReaderDemo - FILE: sample05.gif              FRAMES: 101  , ERROR: None
-13:08:48.756 [main] INFO  com.ibasco.image.gif.GifReaderDemo - FILE: sample06.gif              FRAMES: 10   , ERROR: None
-13:08:48.756 [main] INFO  com.ibasco.image.gif.GifReaderDemo - FILE: sample02.gif              FRAMES: 61   , ERROR: None
-13:08:48.756 [main] INFO  com.ibasco.image.gif.GifReaderDemo - FILE: sample04.gif              FRAMES: 10   , ERROR: None
-13:08:48.756 [main] INFO  com.ibasco.image.gif.GifReaderDemo - FILE: sample08-nsfw.gif         FRAMES: 24   , ERROR: None
-13:08:48.756 [main] INFO  com.ibasco.image.gif.GifReaderDemo - FILE: sample01.gif              FRAMES: 30   , ERROR: None
-13:08:48.756 [main] INFO  com.ibasco.image.gif.GifReaderDemo - FILE: sample07.gif              FRAMES: 3    , ERROR: None
-13:08:48.756 [main] INFO  com.ibasco.image.gif.GifReaderDemo - ====================================================
-13:08:48.756 [main] INFO  com.ibasco.image.gif.GifReaderDemo - END
-13:08:48.756 [main] INFO  com.ibasco.image.gif.GifReaderDemo - ====================================================
-13:08:48.758 [main] INFO  com.ibasco.image.gif.GifReaderDemo - Processed a total of 308 frames from 9 images (Took 906 ms, Last File: sample07.gif)
-
-Process finished with exit code 0
+Processed file: sample08-nsfw.gif (Total frames: 24)
+Processed file: sample01.gif (Total frames: 30)
+Processed file: sample07.gif (Total frames: 3)
+====================================================
+STATUS REPORT
+====================================================
+FILE: sample09-nsfw.gif         FRAMES: 20   , ERROR: None
+FILE: sample03.gif              FRAMES: 49   , ERROR: None
+FILE: sample05.gif              FRAMES: 101  , ERROR: None
+FILE: sample06.gif              FRAMES: 10   , ERROR: None
+FILE: sample02.gif              FRAMES: 61   , ERROR: None
+FILE: sample04.gif              FRAMES: 10   , ERROR: None
+FILE: sample08-nsfw.gif         FRAMES: 24   , ERROR: None
+FILE: sample01.gif              FRAMES: 30   , ERROR: None
+FILE: sample07.gif              FRAMES: 3    , ERROR: None
+====================================================
+END
+====================================================
+Processed a total of 308 frames from 9 images (Took 906 ms, Last File: sample07.gif)
 ```
 
 **Javax ImageIO**
 
 ```text
-13:09:30.501 [main] INFO  com.ibasco.image.gif.ImageIODemo - ====================================================
-13:09:30.504 [main] INFO  com.ibasco.image.gif.ImageIODemo - START
-13:09:30.504 [main] INFO  com.ibasco.image.gif.ImageIODemo - ====================================================
-13:09:30.591 [main] INFO  com.ibasco.image.gif.ImageIODemo - Processed file: sample09-nsfw.gif (Total frames: 9)
-13:09:30.613 [main] INFO  com.ibasco.image.gif.ImageIODemo - Processed file: sample03.gif (Total frames: 0)
-13:09:30.636 [main] INFO  com.ibasco.image.gif.ImageIODemo - Processed file: sample05.gif (Total frames: 0)
-13:09:30.639 [main] INFO  com.ibasco.image.gif.ImageIODemo - Processed file: sample06.gif (Total frames: 0)
-13:09:30.650 [main] INFO  com.ibasco.image.gif.ImageIODemo - Processed file: sample02.gif (Total frames: 0)
-13:09:30.657 [main] INFO  com.ibasco.image.gif.ImageIODemo - Processed file: sample04.gif (Total frames: 0)
-13:09:30.670 [main] INFO  com.ibasco.image.gif.ImageIODemo - Processed file: sample08-nsfw.gif (Total frames: 24)
-13:09:30.680 [main] INFO  com.ibasco.image.gif.ImageIODemo - Processed file: sample01.gif (Total frames: 0)
-13:09:30.683 [main] INFO  com.ibasco.image.gif.ImageIODemo - Processed file: sample07.gif (Total frames: 3)
-13:09:30.683 [main] INFO  com.ibasco.image.gif.ImageIODemo - ====================================================
-13:09:30.683 [main] INFO  com.ibasco.image.gif.ImageIODemo - STATUS REPORT
-13:09:30.683 [main] INFO  com.ibasco.image.gif.ImageIODemo - ====================================================
-13:09:30.691 [main] INFO  com.ibasco.image.gif.ImageIODemo - FILE: sample09-nsfw.gif         FRAMES: 9    , ERROR: Index 4096 out of bounds for length 4096
-13:09:30.692 [main] INFO  com.ibasco.image.gif.ImageIODemo - FILE: sample03.gif              FRAMES: 0    , ERROR: Index 4096 out of bounds for length 4096
-13:09:30.692 [main] INFO  com.ibasco.image.gif.ImageIODemo - FILE: sample05.gif              FRAMES: 0    , ERROR: Index 4096 out of bounds for length 4096
-13:09:30.692 [main] INFO  com.ibasco.image.gif.ImageIODemo - FILE: sample06.gif              FRAMES: 0    , ERROR: Index 4096 out of bounds for length 4096
-13:09:30.692 [main] INFO  com.ibasco.image.gif.ImageIODemo - FILE: sample02.gif              FRAMES: 0    , ERROR: Index 4096 out of bounds for length 4096
-13:09:30.693 [main] INFO  com.ibasco.image.gif.ImageIODemo - FILE: sample04.gif              FRAMES: 0    , ERROR: Index 4096 out of bounds for length 4096
-13:09:30.693 [main] INFO  com.ibasco.image.gif.ImageIODemo - FILE: sample08-nsfw.gif         FRAMES: 24   , ERROR: None
-13:09:30.693 [main] INFO  com.ibasco.image.gif.ImageIODemo - FILE: sample01.gif              FRAMES: 0    , ERROR: Index 4096 out of bounds for length 4096
-13:09:30.693 [main] INFO  com.ibasco.image.gif.ImageIODemo - FILE: sample07.gif              FRAMES: 3    , ERROR: None
-13:09:30.693 [main] INFO  com.ibasco.image.gif.ImageIODemo - ====================================================
-13:09:30.693 [main] INFO  com.ibasco.image.gif.ImageIODemo - END
-13:09:30.694 [main] INFO  com.ibasco.image.gif.ImageIODemo - ====================================================
-13:09:30.696 [main] INFO  com.ibasco.image.gif.ImageIODemo - Processed a total of 36 frames from 9 images (Took 189 ms, Last File: sample07.gif)
-
-Process finished with exit code 0
+====================================================
+START
+====================================================
+Processed file: sample09-nsfw.gif (Total frames: 9)
+Processed file: sample03.gif (Total frames: 0)
+Processed file: sample05.gif (Total frames: 0)
+Processed file: sample06.gif (Total frames: 0)
+Processed file: sample02.gif (Total frames: 0)
+Processed file: sample04.gif (Total frames: 0)
+Processed file: sample08-nsfw.gif (Total frames: 24)
+Processed file: sample01.gif (Total frames: 0)
+Processed file: sample07.gif (Total frames: 3)
+====================================================
+STATUS REPORT
+====================================================
+FILE: sample09-nsfw.gif         FRAMES: 9    , ERROR: Index 4096 out of bounds for length 4096
+FILE: sample03.gif              FRAMES: 0    , ERROR: Index 4096 out of bounds for length 4096
+FILE: sample05.gif              FRAMES: 0    , ERROR: Index 4096 out of bounds for length 4096
+FILE: sample06.gif              FRAMES: 0    , ERROR: Index 4096 out of bounds for length 4096
+FILE: sample02.gif              FRAMES: 0    , ERROR: Index 4096 out of bounds for length 4096
+FILE: sample04.gif              FRAMES: 0    , ERROR: Index 4096 out of bounds for length 4096
+FILE: sample08-nsfw.gif         FRAMES: 24   , ERROR: None
+FILE: sample01.gif              FRAMES: 0    , ERROR: Index 4096 out of bounds for length 4096
+FILE: sample07.gif              FRAMES: 3    , ERROR: None
+====================================================
+END
+====================================================
+Processed a total of 36 frames from 9 images (Took 189 ms, Last File: sample07.gif)
 ```
 
 **Apache Commons Imaging**
 
 ```text
-13:35:09.349 [main] INFO  c.ibasco.image.gif.ApacheImagingDemo - ====================================================
-13:35:09.353 [main] INFO  c.ibasco.image.gif.ApacheImagingDemo - START
-13:35:09.353 [main] INFO  c.ibasco.image.gif.ApacheImagingDemo - ====================================================
-13:35:09.431 [main] INFO  c.ibasco.image.gif.ApacheImagingDemo - Processed file: sample09-nsfw.gif (Total frames: 0)
-13:35:10.121 [main] INFO  c.ibasco.image.gif.ApacheImagingDemo - Processed file: sample03.gif (Total frames: 49)
-13:35:10.269 [main] INFO  c.ibasco.image.gif.ApacheImagingDemo - Processed file: sample05.gif (Total frames: 101)
-13:35:10.276 [main] INFO  c.ibasco.image.gif.ApacheImagingDemo - Processed file: sample06.gif (Total frames: 10)
-13:35:10.336 [main] INFO  c.ibasco.image.gif.ApacheImagingDemo - Processed file: sample02.gif (Total frames: 61)
-13:35:10.355 [main] INFO  c.ibasco.image.gif.ApacheImagingDemo - Processed file: sample04.gif (Total frames: 10)
-13:35:10.355 [main] INFO  c.ibasco.image.gif.ApacheImagingDemo - Processed file: sample08-nsfw.gif (Total frames: 0)
-13:35:10.411 [main] INFO  c.ibasco.image.gif.ApacheImagingDemo - Processed file: sample01.gif (Total frames: 30)
-13:35:10.412 [main] INFO  c.ibasco.image.gif.ApacheImagingDemo - Processed file: sample07.gif (Total frames: 0)
-13:35:10.412 [main] INFO  c.ibasco.image.gif.ApacheImagingDemo - ====================================================
-13:35:10.412 [main] INFO  c.ibasco.image.gif.ApacheImagingDemo - STATUS REPORT
-13:35:10.412 [main] INFO  c.ibasco.image.gif.ApacheImagingDemo - ====================================================
-13:35:10.418 [main] INFO  c.ibasco.image.gif.ApacheImagingDemo - FILE: sample09-nsfw.gif         FRAMES: 0    , ERROR: Bad Code: -1 codes: 258 code_size: 9, table: 4096
-13:35:10.419 [main] INFO  c.ibasco.image.gif.ApacheImagingDemo - FILE: sample03.gif              FRAMES: 49   , ERROR: None
-13:35:10.419 [main] INFO  c.ibasco.image.gif.ApacheImagingDemo - FILE: sample05.gif              FRAMES: 101  , ERROR: None
-13:35:10.419 [main] INFO  c.ibasco.image.gif.ApacheImagingDemo - FILE: sample06.gif              FRAMES: 10   , ERROR: None
-13:35:10.419 [main] INFO  c.ibasco.image.gif.ApacheImagingDemo - FILE: sample02.gif              FRAMES: 61   , ERROR: None
-13:35:10.419 [main] INFO  c.ibasco.image.gif.ApacheImagingDemo - FILE: sample04.gif              FRAMES: 10   , ERROR: None
-13:35:10.419 [main] INFO  c.ibasco.image.gif.ApacheImagingDemo - FILE: sample08-nsfw.gif         FRAMES: 0    , ERROR: Bad Code: -1 codes: 66 code_size: 7, table: 4096
-13:35:10.420 [main] INFO  c.ibasco.image.gif.ApacheImagingDemo - FILE: sample01.gif              FRAMES: 30   , ERROR: None
-13:35:10.420 [main] INFO  c.ibasco.image.gif.ApacheImagingDemo - FILE: sample07.gif              FRAMES: 0    , ERROR: Bad Code: -1 codes: 258 code_size: 9, table: 4096
-13:35:10.420 [main] INFO  c.ibasco.image.gif.ApacheImagingDemo - ====================================================
-13:35:10.420 [main] INFO  c.ibasco.image.gif.ApacheImagingDemo - END
-13:35:10.420 [main] INFO  c.ibasco.image.gif.ApacheImagingDemo - ====================================================
-13:35:10.422 [main] INFO  c.ibasco.image.gif.ApacheImagingDemo - Processed a total of 261 frames from 9 images (Took 1066 ms, Last File: sample07.gif)
-
-Process finished with exit code 0
+====================================================
+START
+====================================================
+Processed file: sample09-nsfw.gif (Total frames: 0)
+Processed file: sample03.gif (Total frames: 49)
+Processed file: sample05.gif (Total frames: 101)
+Processed file: sample06.gif (Total frames: 10)
+Processed file: sample02.gif (Total frames: 61)
+Processed file: sample04.gif (Total frames: 10)
+Processed file: sample08-nsfw.gif (Total frames: 0)
+Processed file: sample01.gif (Total frames: 30)
+Processed file: sample07.gif (Total frames: 0)
+====================================================
+STATUS REPORT
+====================================================
+FILE: sample09-nsfw.gif         FRAMES: 0    , ERROR: Bad Code: -1 codes: 258 code_size: 9, table: 4096
+FILE: sample03.gif              FRAMES: 49   , ERROR: None
+FILE: sample05.gif              FRAMES: 101  , ERROR: None
+FILE: sample06.gif              FRAMES: 10   , ERROR: None
+FILE: sample02.gif              FRAMES: 61   , ERROR: None
+FILE: sample04.gif              FRAMES: 10   , ERROR: None
+FILE: sample08-nsfw.gif         FRAMES: 0    , ERROR: Bad Code: -1 codes: 66 code_size: 7, table: 4096
+FILE: sample01.gif              FRAMES: 30   , ERROR: None
+FILE: sample07.gif              FRAMES: 0    , ERROR: Bad Code: -1 codes: 258 code_size: 9, table: 4096
+====================================================
+END
+====================================================
+Processed a total of 261 frames from 9 images (Took 1066 ms, Last File: sample07.gif)
 ```
