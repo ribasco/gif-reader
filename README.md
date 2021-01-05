@@ -87,8 +87,6 @@ try(var reader=new GifImageReader(file)){
 
 ### Test results and Comparison
 
-Below are gathered test results from some known open-source libraries/implementation's of a GIF Decoder for java.
-
 All images used in this test can be found at the [samples](https://github.com/ribasco/gif-reader/tree/master/samples) directory
 
 **GifReader Test (GifReaderDemo.java)**
