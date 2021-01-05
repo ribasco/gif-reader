@@ -1,3 +1,19 @@
+/*
+ * Copyright 2021 Rafael Luis L. Ibasco
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.ibasco.image.gif;
 
 import com.ibasco.image.gif.enums.DisposalMethod;
@@ -84,11 +100,29 @@ public class GifFrame {
     }
 
     /**
+     * Indicates the presence of a Local Color Table immediately
+     * following this Image Descriptor. (This field is the most significant bit of the byte.)
+     *
+     * @return {@code True} - local color table present, and to follow immediately after this image descriptor. <p>
+     * {@code False} - local color table is not present. Use global color table if available.
+     */
+    public boolean hasLocalColorTable() {
+        return localColorTableFlag;
+    }
+
+    /**
+     * @return The image metadata
+     */
+    public GifMetaData getMetadata() {
+        return metadata;
+    }
+
+    /**
      * <p>
      * Indicates the way in which the graphic is to be treated after being displayed.
      * </p>
      * <br />
-     * <table style="padding: 10px; border-collapse: collapse;" width="500">
+     * <table style="padding: 10px; border-collapse: collapse; width:500px;">
      *      <tr>
      *          <th>Name</th>
      *          <th>Value</th>
@@ -204,17 +238,6 @@ public class GifFrame {
     }
 
     /**
-     * Indicates the presence of a Local Color Table immediately
-     * following this Image Descriptor. (This field is the most significant bit of the byte.)
-     *
-     * @return {@code True} - local color table present, and to follow immediately after this image descriptor. <p>
-     * {@code False} - local color table is not present. Use global color table if available.
-     */
-    public boolean hasLocalColorTable() {
-        return localColorTableFlag;
-    }
-
-    /**
      * Indicates if the image is interlaced. An image is interlaced
      * in a four-pass interlace pattern; see Appendix E for details.
      *
@@ -289,8 +312,8 @@ public class GifFrame {
 
     /**
      * A special Clear code is defined which resets all compression/decompression
-     * parameters and tables to a start-up state. The value of this code is 2**<code
-     * size>. For example if the code size indicated was 4 (image was 4 bits/pixel)
+     * parameters and tables to a start-up state. The value of this code is 2**&lt;code size&gt;.
+     * For example if the code size indicated was 4 (image was 4 bits/pixel)
      * the Clear code value would be 16 (10000 binary). The Clear code can appear at
      * any point in the image data stream and therefore requires the LZW algorithm to
      * process succeeding codes as if a new data stream was starting. Encoders should
@@ -306,7 +329,7 @@ public class GifFrame {
      * An End of Information code is defined that explicitly indicates	the
      * end  of	the image data stream.	LZW processing terminates when this
      * code is encountered.  It must be the last code output by the encoder
-     * for an image.  The value of this code is <Clear code>+1.
+     * for an image.  The value of this code is &lt;Clear code&gt;+1.
      *
      * @return The code value
      */
@@ -319,12 +342,5 @@ public class GifFrame {
      */
     public int[] getData() {
         return data;
-    }
-
-    /**
-     * @return The image metadata
-     */
-    public GifMetaData getMetadata() {
-        return metadata;
     }
 }

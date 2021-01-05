@@ -1,3 +1,19 @@
+/*
+ * Copyright 2021 Rafael Luis L. Ibasco
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.ibasco.image.gif;
 
 import com.ibasco.image.gif.enums.Block;
@@ -54,13 +70,10 @@ import java.util.function.BiConsumer;
 @SuppressWarnings("DuplicatedCode")
 public final class GifImageReader implements AutoCloseable {
 
-    private static final Logger log = LoggerFactory.getLogger(GifImageReader.class);
+    //A simple filter that tells the processor to not skip the data blocks
+    public static final BlockFilter DO_NOT_SKIP = (ident, data) -> false;
 
-    @FunctionalInterface
-    public interface BlockFilter {
-
-        boolean filter(BlockIdentifier block, Object... data);
-    }
+    public static final BlockFilter SKIP_ALL = (ident, data) -> true;
 
     /*
      * <p>Types of blocks</p>
@@ -93,6 +106,8 @@ public final class GifImageReader implements AutoCloseable {
 
     //<editor-fold desc="Constants">
 
+    private static final Logger log = LoggerFactory.getLogger(GifImageReader.class);
+
     /**
      * A fixed sequence of bytes representing the GIF header signature
      */
@@ -110,11 +125,6 @@ public final class GifImageReader implements AutoCloseable {
 
     //Default byte order to use
     private static final ByteOrder BYTE_ORDER = ByteOrder.LITTLE_ENDIAN;
-
-    //A simple filter that tells the processor to not skip the data blocks
-    public static final BlockFilter DO_NOT_SKIP = (ident, data) -> false;
-
-    public static final BlockFilter SKIP_ALL = (ident, data) -> true;
 
     //total number of bytes required to read the image descriptor size fields
     private static final int LENGTH_IMAGE_DESC_DIMENSIONS = 8;
@@ -142,10 +152,10 @@ public final class GifImageReader implements AutoCloseable {
 
     //number of bytes for the logical screen descriptor
     private static final int LENGTH_LOGICAL_SCREEN_DESC = 7;
-    //</editor-fold>
 
     //<editor-fold desc="Private Members">
     private final ImageInputStream is;
+    //</editor-fold>
 
     private GifMetaData metadata;
 
@@ -165,7 +175,6 @@ public final class GifImageReader implements AutoCloseable {
     private long lastLogicalScreenDescriptorOffset;
 
     private BlockFilter filter = DO_NOT_SKIP;
-    //</editor-fold>
 
     /**
      * Creates a new reader instance based on the source image {@link File} provided.
@@ -180,6 +189,7 @@ public final class GifImageReader implements AutoCloseable {
     public GifImageReader(File imageFile) throws IOException {
         this(ImageIO.createImageInputStream(imageFile));
     }
+    //</editor-fold>
 
     /**
      * Creates a new reader instance based on the {@link InputStream} provided.
@@ -210,6 +220,199 @@ public final class GifImageReader implements AutoCloseable {
         this.is = is;
         this.metadata = initializeImage(is);
         this.metadata.totalFrames = scanFrameSize(is);
+    }
+
+    private static boolean readGlobalColorTableFlag(byte packedByte) {
+        return (packedByte & 0b10000000) >>> 7 == 1;
+    }
+
+    private static int readGlobalColorTableSize(byte packedByte) {
+        final int globColTblSizePower = (packedByte & 7) + 1; // Bits 0-2
+        return 1 << globColTblSizePower;
+    }
+
+    private static boolean readLocalColorTableFlag(byte packedByte) {
+        return ((packedByte & 0b10000000) >>> 7) == 1;
+    }
+
+    private static int readLocalColorTableSize(byte packedByte) {
+        final int localColorTablePower = (packedByte & 0b00000111) + 1;
+        return 1 << localColorTablePower; //2 ^ (N + 1) as per spec
+    }
+
+    /**
+     * Reads a byte from the data stream and checks if the size value is empty.
+     *
+     * @param is
+     *         The {@link ImageInputStream} containing the data to be processed
+     *
+     * @throws IOException
+     *         If the size is less than or equals to 0. Or end of file has been reached.
+     */
+    private static void checkBlockSize(ImageInputStream is) throws IOException {
+        int size = is.readUnsignedByte();
+        if (size <= 0)
+            throw new IOException("Empty block size");
+        is.mark();
+        int skipped = is.skipBytes(size);
+        if (skipped != size)
+            throw new IOException(String.format("The number of remaining bytes is not equals to the expected block size (Remaining: %d, Expected: %d)", skipped, size));
+        is.reset();
+    }
+
+    /**
+     * Advances/Skips all data blocks of variable length, starting from the current position of the data stream.
+     *
+     * @param is
+     *         The {@link ImageInputStream} The {@link ImageInputStream} to read data from
+     *
+     * @return The total number of bytes that were skipped (inclusive of the zero-length terminator byte)
+     *
+     * @throws IOException
+     *         When an I/O error occurs
+     */
+    private static int skipDataBlocks(final ImageInputStream is) throws IOException {
+        int totalSkipped = 0;
+        int blockSize; //Note from spec: This field contains the fixed value 11.
+        while ((blockSize = is.readUnsignedByte()) > 0) {
+            totalSkipped += is.skipBytes(blockSize);
+        }
+        return totalSkipped;
+    }
+
+    /**
+     * <p>
+     * Scans for all available data blocks starting from the current position of the buffer and computes it's total size (in bytes).
+     * </p>
+     *
+     * @param is
+     *         The {@link ImageInputStream} to scan
+     *
+     * @return The total number of bytes read or 0 if no blocks were read.
+     *
+     * @throws IOException
+     *         When an I/O error occurs (usually when the end of file has been reached)
+     * @implNote The original position of the buffer (prior to calling this method) will be restored after this method completes
+     */
+    private static int computeBlockSize(ImageInputStream is) throws IOException {
+        int totalSize = 0;
+        try {
+            is.mark();
+            int blockSize; //note: per spec, block size does not take into account the size byte
+            while ((blockSize = is.readUnsignedByte()) > 0) {
+                totalSize += is.skipBytes(blockSize);
+            }
+        } finally {
+            is.reset();
+        }
+        return totalSize;
+    }
+
+    /**
+     * Read and process available color table from the data stream and store them to the specified int array.
+     *
+     * @param is
+     *         The {@link ImageInputStream} instance to read the data from
+     * @param colors
+     *         A pre-allocated integer buffer whose length determines the number of colors to be processed.
+     *         Each color consists of 3 bytes (red, green, blue) and will be converted into an ARGB integer.
+     *
+     * @implNote The alpha property will always be 255 (opaque)
+     */
+    private static void readColorTable(ImageInputStream is, final int[] colors) throws IOException {
+        if (colors == null || colors.length == 0)
+            throw new IllegalArgumentException("The destination buffer is null or empty");
+        for (int index = 0; index < colors.length; index++) {
+            final int r = Byte.toUnsignedInt(is.readByte()); //red
+            final int g = Byte.toUnsignedInt(is.readByte()); //green
+            final int b = Byte.toUnsignedInt(is.readByte()); //blue
+            colors[index] = toArgb(r, g, b);
+        }
+    }
+
+    /**
+     * Converts the individual R-G-B values to a single signed integer value in ARGB format.
+     * Alpha/Opacity value is applied at 255 (Opaque) by default.
+     *
+     * @param red
+     *         The red component value (0 - 255)
+     * @param green
+     *         The green component value (0 - 255)
+     * @param blue
+     *         The blue component value (0 - 255)
+     *
+     * @return A signed 32-bit ARGB value
+     */
+    private static int toArgb(int red, int green, int blue) {
+        return toArgb(red, green, blue, 255);
+    }
+
+    /**
+     * Converts the individual R-G-B values to a single signed integer value in ARGB format.
+     * Alpha/Opacity value is applied at 255 (Opaque) by default.
+     *
+     * @param red
+     *         The red component value (0 - 255)
+     * @param green
+     *         The green component value (0 - 255)
+     * @param blue
+     *         The blue component value (0 - 255)
+     * @param alpha
+     *         The alpha component value (0 - 255)
+     *
+     * @return A signed 32-bit ARGB value
+     */
+    public static int toArgb(int red, int green, int blue, int alpha) {
+        return ((alpha & 0xff) << 24) | ((red & 0xff) << 16) | ((green & 0xff) << 8) | (blue & 0xff);
+    }
+
+    /**
+     * Breaks down a 32-bit ARGB integer into a 4-byte array contianing ARGB color channels
+     *
+     * @param argb
+     *         The 32-bit ARGB integer to convert
+     *
+     * @return A 4-byte array containing the ARGB colors. Color values range from 0 to 255.
+     */
+    public static int[] fromArgb(int argb) {
+        int[] ar = new int[4];
+        ar[0] = (argb >> 24) & 0xff; //alpha
+        ar[1] = (argb >> 16) & 0xff; //red
+        ar[2] = (argb >> 8) & 0xff; //green
+        ar[3] = argb & 0xff; //blue
+        return ar;
+    }
+
+    /**
+     * Convert byte array to hex string
+     *
+     * @param data
+     *         The byte array to convert
+     *
+     * @return A string of hexadecimal codes
+     */
+    public static String toHexString(byte... data) {
+        StringBuilder sb = new StringBuilder(data.length * 2);
+        for (byte b : data) {
+            sb.append(String.format("%02x", b).toUpperCase());
+            sb.append(" ");
+        }
+        return sb.toString();
+    }
+
+    public static String toHexString(int... data) {
+        StringBuilder sb = new StringBuilder(data.length * 2);
+        for (int b : data) {
+            sb.append(String.format("%02x", b).toUpperCase());
+            sb.append(" ");
+        }
+        return sb.toString();
+    }
+
+    private static void printDebugHeader(String format, Object... params) {
+        log.debug("==========================================================");
+        log.debug(format.toUpperCase(), params);
+        log.debug("==========================================================");
     }
 
     /**
@@ -243,7 +446,7 @@ public final class GifImageReader implements AutoCloseable {
      *
      * @return {@code true} if there are more blocks available to be processed, {@code false} if there are no more blocks available or we have reached either {@link Block#TRAILER} or end-of-file.
      *
-     * @implNote Calling this method does not guarantee that the next read operation will be successful.
+     * @apiNote  Calling this method does not guarantee that the next read operation will be successful.
      * It simply checks if the next byte is a valid block identifier.
      */
     public boolean hasRemaining() {
@@ -568,6 +771,8 @@ public final class GifImageReader implements AutoCloseable {
             return null;
         }
     }
+
+    //<editor-fold desc="Utility Methods">
 
     /**
      * Reads and processes a single supported extension blocks from the current data stream
@@ -1182,8 +1387,6 @@ public final class GifImageReader implements AutoCloseable {
         return this.currentFrame;
     }
 
-    //<editor-fold desc="Utility Methods">
-
     /**
      * Scans the entire data stream and counts the number of image frames available. This is safe to be called at any position in the data stream.
      *
@@ -1223,92 +1426,6 @@ public final class GifImageReader implements AutoCloseable {
             is.reset();
         }
         return count[0];
-    }
-
-    private static boolean readGlobalColorTableFlag(byte packedByte) {
-        return (packedByte & 0b10000000) >>> 7 == 1;
-    }
-
-    private static int readGlobalColorTableSize(byte packedByte) {
-        final int globColTblSizePower = (packedByte & 7) + 1; // Bits 0-2
-        return 1 << globColTblSizePower;
-    }
-
-    private static boolean readLocalColorTableFlag(byte packedByte) {
-        return ((packedByte & 0b10000000) >>> 7) == 1;
-    }
-
-    private static int readLocalColorTableSize(byte packedByte) {
-        final int localColorTablePower = (packedByte & 0b00000111) + 1;
-        return 1 << localColorTablePower; //2 ^ (N + 1) as per spec
-    }
-
-    /**
-     * Reads a byte from the data stream and checks if the size value is empty.
-     *
-     * @param is
-     *         The {@link ImageInputStream} containing the data to be processed
-     *
-     * @throws IOException
-     *         If the size is less than or equals to 0. Or end of file has been reached.
-     */
-    private static void checkBlockSize(ImageInputStream is) throws IOException {
-        int size = is.readUnsignedByte();
-        if (size <= 0)
-            throw new IOException("Empty block size");
-        is.mark();
-        int skipped = is.skipBytes(size);
-        if (skipped != size)
-            throw new IOException(String.format("The number of remaining bytes is not equals to the expected block size (Remaining: %d, Expected: %d)", skipped, size));
-        is.reset();
-    }
-
-    /**
-     * Advances/Skips all data blocks of variable length, starting from the current position of the data stream.
-     *
-     * @param is
-     *         The {@link ImageInputStream} The {@link ImageInputStream} to read data from
-     *
-     * @return The total number of bytes that were skipped (inclusive of the zero-length terminator byte)
-     *
-     * @throws IOException
-     *         When an I/O error occurs
-     */
-    private static int skipDataBlocks(final ImageInputStream is) throws IOException {
-        int totalSkipped = 0;
-        int blockSize; //Note from spec: This field contains the fixed value 11.
-        while ((blockSize = is.readUnsignedByte()) > 0) {
-            totalSkipped += is.skipBytes(blockSize);
-        }
-        return totalSkipped;
-    }
-
-    /**
-     * <p>
-     * Scans for all available data blocks starting from the current position of the buffer and computes it's total size (in bytes).
-     * </p>
-     *
-     * @param is
-     *         The {@link ImageInputStream} to scan
-     *
-     * @return The total number of bytes read or 0 if no blocks were read.
-     *
-     * @throws IOException
-     *         When an I/O error occurs (usually when the end of file has been reached)
-     * @implNote The original position of the buffer (prior to calling this method) will be restored after this method completes
-     */
-    private static int computeBlockSize(ImageInputStream is) throws IOException {
-        int totalSize = 0;
-        try {
-            is.mark();
-            int blockSize; //note: per spec, block size does not take into account the size byte
-            while ((blockSize = is.readUnsignedByte()) > 0) {
-                totalSize += is.skipBytes(blockSize);
-            }
-        } finally {
-            is.reset();
-        }
-        return totalSize;
     }
 
     /**
@@ -1365,111 +1482,14 @@ public final class GifImageReader implements AutoCloseable {
         return totalSize;
     }
 
-    /**
-     * Read and process available color table from the data stream and store them to the specified int array.
-     *
-     * @param is
-     *         The {@link ImageInputStream} instance to read the data from
-     * @param colors
-     *         A pre-allocated integer buffer whose length determines the number of colors to be processed.
-     *         Each color consists of 3 bytes (red, green, blue) and will be converted into an ARGB integer.
-     *
-     * @implNote The alpha property will always be 255 (opaque)
-     */
-    private static void readColorTable(ImageInputStream is, final int[] colors) throws IOException {
-        if (colors == null || colors.length == 0)
-            throw new IllegalArgumentException("The destination buffer is null or empty");
-        for (int index = 0; index < colors.length; index++) {
-            final int r = Byte.toUnsignedInt(is.readByte()); //red
-            final int g = Byte.toUnsignedInt(is.readByte()); //green
-            final int b = Byte.toUnsignedInt(is.readByte()); //blue
-            colors[index] = toArgb(r, g, b);
+    @Override
+    public void close() throws IOException {
+        if (!closed && this.is != null) {
+            this.is.close();
+            reset();
+            closed = true;
+            log.debug("Successfully closed the underlying image input stream");
         }
-    }
-
-    /**
-     * Converts the individual R-G-B values to a single signed integer value in ARGB format.
-     * Alpha/Opacity value is applied at 255 (Opaque) by default.
-     *
-     * @param red
-     *         The red component value (0 - 255)
-     * @param green
-     *         The green component value (0 - 255)
-     * @param blue
-     *         The blue component value (0 - 255)
-     *
-     * @return A signed 32-bit ARGB value
-     */
-    private static int toArgb(int red, int green, int blue) {
-        return toArgb(red, green, blue, 255);
-    }
-
-    /**
-     * Converts the individual R-G-B values to a single signed integer value in ARGB format.
-     * Alpha/Opacity value is applied at 255 (Opaque) by default.
-     *
-     * @param red
-     *         The red component value (0 - 255)
-     * @param green
-     *         The green component value (0 - 255)
-     * @param blue
-     *         The blue component value (0 - 255)
-     * @param alpha
-     *         The alpha component value (0 - 255)
-     *
-     * @return A signed 32-bit ARGB value
-     */
-    public static int toArgb(int red, int green, int blue, int alpha) {
-        return ((alpha & 0xff) << 24) | ((red & 0xff) << 16) | ((green & 0xff) << 8) | (blue & 0xff);
-    }
-
-    /**
-     * Breaks down a 32-bit ARGB integer into a 4-byte array contianing ARGB color channels
-     *
-     * @param argb
-     *         The 32-bit ARGB integer to convert
-     *
-     * @return A 4-byte array containing the ARGB colors. Color values range from 0 to 255.
-     */
-    public static int[] fromArgb(int argb) {
-        int[] ar = new int[4];
-        ar[0] = (argb >> 24) & 0xff; //alpha
-        ar[1] = (argb >> 16) & 0xff; //red
-        ar[2] = (argb >> 8) & 0xff; //green
-        ar[3] = argb & 0xff; //blue
-        return ar;
-    }
-
-    /**
-     * Convert byte array to hex string
-     *
-     * @param data
-     *         The byte array to convert
-     *
-     * @return A string of hexadecimal codes
-     */
-    public static String toHexString(byte... data) {
-        StringBuilder sb = new StringBuilder(data.length * 2);
-        for (byte b : data) {
-            sb.append(String.format("%02x", b).toUpperCase());
-            sb.append(" ");
-        }
-        return sb.toString();
-    }
-
-    public static String toHexString(int... data) {
-        StringBuilder sb = new StringBuilder(data.length * 2);
-        for (int b : data) {
-            sb.append(String.format("%02x", b).toUpperCase());
-            sb.append(" ");
-        }
-        return sb.toString();
-    }
-
-    private static void printDebugHeader(String format, Object... params) {
-        log.debug("==========================================================");
-        log.debug(format.toUpperCase(), params);
-        log.debug("==========================================================");
     }
 
     private void reset() {
@@ -1479,14 +1499,15 @@ public final class GifImageReader implements AutoCloseable {
         this.frameIndex = 0;
     }
 
-    @Override
-    public void close() throws IOException {
-        if (!closed && this.is != null) {
-            this.is.close();
-            reset();
-            closed = true;
-            log.debug("Successfully closed the underlying image input stream");
-        }
+    /**
+     * Interface for on-the-fly filtering of sub/data-blocks during image processing
+     *
+     * @author Rafael Luis Ibasco
+     */
+    @FunctionalInterface
+    public interface BlockFilter {
+
+        boolean filter(BlockIdentifier block, Object... data);
     }
     //</editor-fold>
 }

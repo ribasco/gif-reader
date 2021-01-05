@@ -1,9 +1,24 @@
+/*
+ * Copyright 2021 Rafael Luis L. Ibasco
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.ibasco.image.gif;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -12,9 +27,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 
-public class ImageIOTest {
+public class GifReaderDemo {
 
-    private static final Logger log = LoggerFactory.getLogger(ImageIOTest.class);
+    private static final Logger log = LoggerFactory.getLogger(GifReaderDemo.class);
 
     public static void main(String[] args) throws Exception {
         File samplesDir = Path.of(System.getProperty("user.dir"), "samples").toFile();
@@ -34,27 +49,35 @@ public class ImageIOTest {
         var statusList = new ArrayList<Status>();
         try {
             for (var file : files) {
-                lastFileProcessed = file;
                 int frameCount = 0;
-                try (var is = ImageIO.createImageInputStream(file)) {
-                    var it = ImageIO.getImageReadersBySuffix("gif");
-                    if (!it.hasNext())
-                        throw new IOException("No reader found for gif");
-                    var reader = it.next();
-                    reader.setInput(is);
-                    int numOfFrames = reader.getNumImages(true);
-                    for (int frameIndex = 0; frameIndex < numOfFrames; frameIndex++) {
-                        reader.read(frameIndex);
-                        frameCount++;
+                lastFileProcessed = file;
+                try (var reader = new GifImageReader(file)) {
+                    var metadata = reader.getMetadata();
+                    /*reader.setFilter(new GifImageReader.BlockFilter() {
+                        private int count = 0;
+                        @Override
+                        public boolean filter(BlockIdentifier block, Object... data) {
+                            if (Block.IMAGE_DATA_BLOCK.equals(block)) {
+                                return count++ == 0;
+                            }
+                            return false;
+                        }
+                    });*/
+                    while (reader.hasRemaining()) {
+                        var frame = reader.read();
+                        if (frame == null)
+                            continue;
                         totalFrames++;
+                        frameCount++;
                     }
                     statusList.add(new Status(file, frameCount, null));
                 } catch (Exception ex) {
                     statusList.add(new Status(file, frameCount, ex));
+                    ex.printStackTrace();
                 } finally {
+                    totalImages++;
                     log.info("Processed file: {} (Total frames: {})", file.getName(), frameCount);
                 }
-                totalImages++;
             }
             if (!statusList.isEmpty()) {
                 log.info("====================================================");
@@ -64,6 +87,7 @@ public class ImageIOTest {
                     log.info(status.toString());
                 }
             }
+
             log.info("====================================================");
             log.info("END");
             log.info("====================================================");

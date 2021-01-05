@@ -1,3 +1,19 @@
+/*
+ * Copyright 2021 Rafael Luis L. Ibasco
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.ibasco.image.gif;
 
 import java.util.List;
@@ -111,64 +127,6 @@ public class GifMetaData {
     }
 
     /**
-     * This field identifies the beginning of the GIF Data
-     * Stream; it is not intended to provide a unique signature for the
-     * identification of the data. It is recommended that the GIF Data
-     * Stream be identified externally by the application. (Refer to
-     * Appendix G for on-line identification of the GIF Data Stream.)
-     */
-    public String getSignature() {
-        return new String(signature);
-    }
-
-    /**
-     * ENCODER : An encoder should use the earliest possible
-     * version number that defines all the blocks used in the Data Stream.
-     * When two or more Data Streams are combined, the latest of the
-     * individual version numbers should be used for the resulting Data
-     * Stream. DECODER : A decoder should attempt to process the data
-     * stream to the best of its ability; if it encounters a version
-     * number which it is not capable of processing fully, it should
-     * nevertheless, attempt to process the data stream to the best of its
-     * ability, perhaps after warning the user that the data may be
-     * incomplete.
-     */
-    public String getVersion() {
-        return new String(version);
-    }
-
-    /**
-     * Width (in pixels) of the Logical Screen where the images will be rendered in the displaying device.
-     *
-     * @return The width in pixel unit
-     */
-    public int getWidth() {
-        return width;
-    }
-
-    /**
-     * Height (in pixels) of the Logical Screen where the images will be rendered in the displaying device.
-     *
-     * @return The height in pixel unit
-     */
-    public int getHeight() {
-        return height;
-    }
-
-    /**
-     * Flag indicating the presence of a
-     * Global Color Table; if the flag is set, the Global Color Table will
-     * immediately follow the Logical Screen Descriptor. This flag also
-     * selects the interpretation of the Background Color Index; if the
-     * flag is set, the value of the Background Color Index field should
-     * be used as the table index of the background color. (This field is
-     * the most significant bit of the byte.)
-     */
-    public boolean hasGlobalColorTable() {
-        return globalColorTableFlag;
-    }
-
-    /**
      * Number of bits per primary color available
      * to the original image, minus 1. This value represents the size of
      * the entire palette from which the colors in the graphic were
@@ -216,6 +174,19 @@ public class GifMetaData {
         if (hasGlobalColorTable() && globalColorTableSize > 0)
             return globalColorTable[backgroundColorIndex];
         return -1;
+    }
+
+    /**
+     * Flag indicating the presence of a
+     * Global Color Table; if the flag is set, the Global Color Table will
+     * immediately follow the Logical Screen Descriptor. This flag also
+     * selects the interpretation of the Background Color Index; if the
+     * flag is set, the value of the Background Color Index field should
+     * be used as the table index of the background color. (This field is
+     * the most significant bit of the byte.)
+     */
+    public boolean hasGlobalColorTable() {
+        return globalColorTableFlag;
     }
 
     /**
@@ -280,5 +251,50 @@ public class GifMetaData {
     @Override
     public String toString() {
         return String.format("%s%s (%d x %d)", getSignature(), getVersion(), getWidth(), getHeight());
+    }
+
+    /**
+     * This field identifies the beginning of the GIF Data
+     * Stream; it is not intended to provide a unique signature for the
+     * identification of the data. It is recommended that the GIF Data
+     * Stream be identified externally by the application. (Refer to
+     * Appendix G for on-line identification of the GIF Data Stream.)
+     */
+    public String getSignature() {
+        return new String(signature);
+    }
+
+    /**
+     * ENCODER : An encoder should use the earliest possible
+     * version number that defines all the blocks used in the Data Stream.
+     * When two or more Data Streams are combined, the latest of the
+     * individual version numbers should be used for the resulting Data
+     * Stream. DECODER : A decoder should attempt to process the data
+     * stream to the best of its ability; if it encounters a version
+     * number which it is not capable of processing fully, it should
+     * nevertheless, attempt to process the data stream to the best of its
+     * ability, perhaps after warning the user that the data may be
+     * incomplete.
+     */
+    public String getVersion() {
+        return new String(version);
+    }
+
+    /**
+     * Width (in pixels) of the Logical Screen where the images will be rendered in the displaying device.
+     *
+     * @return The width in pixel unit
+     */
+    public int getWidth() {
+        return width;
+    }
+
+    /**
+     * Height (in pixels) of the Logical Screen where the images will be rendered in the displaying device.
+     *
+     * @return The height in pixel unit
+     */
+    public int getHeight() {
+        return height;
     }
 }
