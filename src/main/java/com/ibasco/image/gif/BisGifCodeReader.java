@@ -8,13 +8,18 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.ByteOrder;
 
-public class BitInputStreamGifCodeReader extends BaseGifCodeReader {
+/**
+ * GIF Code Reader using {@link BitInputStream}
+ *
+ * @author Rafael Luis Ibasco
+ */
+public class BisGifCodeReader extends BaseGifCodeReader {
 
-    private static final Logger log = LoggerFactory.getLogger(BitInputStreamGifCodeReader.class);
+    private static final Logger log = LoggerFactory.getLogger(BisGifCodeReader.class);
 
     private final BitInputStream bis;
 
-    public BitInputStreamGifCodeReader(int codeSize, byte[] data) {
+    public BisGifCodeReader(int codeSize, byte[] data) {
         super(codeSize);
         this.bis = new BitInputStream(new ByteArrayInputStream(data), ByteOrder.nativeOrder());
     }

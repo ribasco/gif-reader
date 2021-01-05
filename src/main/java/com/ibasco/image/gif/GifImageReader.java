@@ -6,20 +6,21 @@ import com.ibasco.image.gif.enums.DisposalMethod;
 import com.ibasco.image.gif.enums.ExtensionBlock;
 import com.ibasco.image.gif.exceptions.InvalidSignatureException;
 import com.ibasco.image.gif.exceptions.UnsupportedBlockException;
-import com.ibasco.image.gif.util.ImageInputStreamAdapter;
 import com.ibasco.image.gif.util.ImageOps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.imageio.ImageIO;
 import javax.imageio.stream.ImageInputStream;
-import java.io.*;
+import java.io.EOFException;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.function.BiConsumer;
-import java.util.function.Function;
 
 /**
  * A pure java implementation of the GIF89a Specification
@@ -51,9 +52,15 @@ import java.util.function.Function;
  * @see <a href="https://www.w3.org/Graphics/GIF/spec-gif89a.txt">GIF89a Specification</a>
  */
 @SuppressWarnings("DuplicatedCode")
-public class GifImageReader implements AutoCloseable {
+public final class GifImageReader implements AutoCloseable {
 
     private static final Logger log = LoggerFactory.getLogger(GifImageReader.class);
+
+    @FunctionalInterface
+    public interface BlockFilter {
+
+        boolean filter(BlockIdentifier block, Object... data);
+    }
 
     /*
      * <p>Types of blocks</p>
@@ -102,12 +109,12 @@ public class GifImageReader implements AutoCloseable {
     private static final byte[] HEADER_VERSION_89A = new byte[] {0x38, 0x39, 0x61};
 
     //Default byte order to use
-    private static final ByteOrder BYTE_ORDER = ByteOrder.nativeOrder();
+    private static final ByteOrder BYTE_ORDER = ByteOrder.LITTLE_ENDIAN;
 
     //A simple filter that tells the processor to not skip the data blocks
-    private static final Function<BlockIdentifier, Boolean> DO_NOT_SKIP = (o) -> false;
+    public static final BlockFilter DO_NOT_SKIP = (ident, data) -> false;
 
-    private static final Function<BlockIdentifier, Boolean> SKIP_ALL = (o) -> true;
+    public static final BlockFilter SKIP_ALL = (ident, data) -> true;
 
     //total number of bytes required to read the image descriptor size fields
     private static final int LENGTH_IMAGE_DESC_DIMENSIONS = 8;
@@ -115,24 +122,29 @@ public class GifImageReader implements AutoCloseable {
     //block size of the graphic control extension block (excluding size and terminator bytes)
     private static final int LENGTH_GRAPHIC_BLOCK = 4;
 
-    public static final int LENGTH_LOGICAL_SCREEN_DIMENSIONS = 4;
+    //number of bytes to read the logical screen descriptor's dimensions (2 bytes each)
+    private static final int LENGTH_LOGICAL_SCREEN_DIMENSIONS = 4;
 
+    //number of bytes to skip one plain text block
     private static final int LENGTH_PLAIN_TEXT_BLOCK = 12;
 
+    //number of bytes for a block terminator
     private static final int LENGTH_TERIMINATOR = 1;
 
+    //number of bytes for the data block size field
     private static final int LENGTH_BLOCK_SIZE = 1;
 
+    //number of bytes for the application extension identifier field
     private static final int LENGTH_APP_IDENTIFIER = 8;
 
+    //number of bytes for the application extension auth code field
     private static final int LENGTH_APP_AUTHCODE = 3;
 
+    //number of bytes for the logical screen descriptor
     private static final int LENGTH_LOGICAL_SCREEN_DESC = 7;
     //</editor-fold>
 
     //<editor-fold desc="Private Members">
-    private final GifImageDecoder decoder;
-
     private final ImageInputStream is;
 
     private GifMetaData metadata;
@@ -141,7 +153,7 @@ public class GifImageReader implements AutoCloseable {
 
     private GifFrame lastFrame;
 
-    private int frameIndex = -1;
+    private int frameIndex = 0;
 
     private boolean closed;
 
@@ -151,6 +163,8 @@ public class GifImageReader implements AutoCloseable {
     private long lastImageDescriptorOffset;
 
     private long lastLogicalScreenDescriptorOffset;
+
+    private BlockFilter filter = DO_NOT_SKIP;
     //</editor-fold>
 
     /**
@@ -193,10 +207,7 @@ public class GifImageReader implements AutoCloseable {
      *         When an I/O error occurs
      */
     public GifImageReader(ImageInputStream is) throws IOException {
-        is.setByteOrder(BYTE_ORDER);
-        this.frameIndex = -1;
         this.is = is;
-        this.decoder = new GifImageDecoder();
         this.metadata = initializeImage(is);
         this.metadata.totalFrames = scanFrameSize(is);
     }
@@ -238,12 +249,25 @@ public class GifImageReader implements AutoCloseable {
     public boolean hasRemaining() {
         if (metadata == null)
             return false;
-        return frameIndex < (metadata.totalFrames - 1);
+        return frameIndex < metadata.totalFrames;
     }
 
-    private Function<BlockIdentifier, Boolean> filter;
+    /**
+     * The block filter currently being used by the reader
+     *
+     * @return The current {@link BlockFilter} used by the reader
+     */
+    public BlockFilter getFilter() {
+        return filter;
+    }
 
-    public void setFilter(Function<BlockIdentifier, Boolean> filter) {
+    /**
+     * The block filter to be used by the reader. If not present, the default filter is {@link #DO_NOT_SKIP}
+     *
+     * @param filter
+     *         The {@link BlockFilter} callback function
+     */
+    public void setFilter(BlockFilter filter) {
         this.filter = filter;
     }
 
@@ -257,14 +281,16 @@ public class GifImageReader implements AutoCloseable {
      */
     public GifFrame read() throws IOException {
         checkInit();
+        final BlockFilter filter = this.filter == null ? DO_NOT_SKIP : this.filter;
         Block block;
         //scan the next image descriptor block
-        while (!Block.TRAILER.equals(block = readBlock(is, metadata, DO_NOT_SKIP))) {
+        while (!Block.TRAILER.equals(block = readBlock(is, metadata, filter))) {
             //image frame usually starts with a descriptor
             if (Block.IMAGE_DESCRIPTOR.equals(block)) {
                 var lastFrame = getLastFrame();
-                if (lastFrame != null)
+                if (lastFrame != null) {
                     return lastFrame;
+                }
             }
         }
         if (!closed)
@@ -308,14 +334,14 @@ public class GifImageReader implements AutoCloseable {
      * @throws IOException
      *         When an I/O error occurs (e.g. Invalid gif format)
      */
-    private void readImageHeaderFields(final ImageInputStream is, final GifMetaData metadata, Function<BlockIdentifier, Boolean> skip) throws IOException {
+    private void readImageHeaderFields(final ImageInputStream is, final GifMetaData metadata, BlockFilter filter) throws IOException {
         printDebugHeader("START: IMAGE HEADER");
         //Process signature and version
-        readSignature(is, metadata);
+        readSignature(is, metadata); //unskippable
         //process logical screen descriptor
-        readLogicalScreenDescriptor(is, metadata, skip.apply(Block.LOGICAL_SCREEN_DESCRIPTOR));
+        readLogicalScreenDescriptor(is, metadata, filter);
         //process global color table (if applicable)
-        readGlobalColorTable(is, metadata, skip.apply(Block.GLOBAL_COLOR_TABLE));
+        readGlobalColorTable(is, metadata, filter);
         printDebugHeader("END: IMAGE HEADER");
     }
 
@@ -382,25 +408,24 @@ public class GifImageReader implements AutoCloseable {
      * @apiNote Required Version not applicable. This block is not subject to a version number.
      * This block must appear immediately after the Header.
      */
-    private void readLogicalScreenDescriptor(final ImageInputStream is, final GifMetaData image, boolean skip) throws IOException {
+    private void readLogicalScreenDescriptor(final ImageInputStream is, final GifMetaData image, BlockFilter skip) throws IOException {
         lastLogicalScreenDescriptorOffset = is.getStreamPosition();
-        if (skip) {
+        if (skip.filter(Block.LOGICAL_SCREEN_DESCRIPTOR)) {
             is.skipBytes(LENGTH_LOGICAL_SCREEN_DESC);
             return;
         }
 
-        image.width = is.readUnsignedShort();
-        image.height = is.readUnsignedShort();
+        image.width = is.readShort();
+        image.height = is.readShort();
 
         //Process packed-byte (using ImagStreamInput api)
-        image.globalColorTableFlag = is.readBit() == 1;
-        int colorResolutionPow = (int) is.readBits(3) + 1;
-        image.colorResolution = 1 << colorResolutionPow; // 2 ^ (N + 1), see spec
-        image.sortFlag = is.readBit() == 1;
-        int globalColTblSizePower = (int) is.readBits(3) + 1;
-
-        // 2 ^ (N + 1), see spec
-        image.globalColorTableSize = 1 << globalColTblSizePower;
+        byte packedFields = is.readByte();
+        image.globalColorTableFlag = (packedFields & 0b10000000) >>> 7 == 1;
+        final int colResPower = ((packedFields & 0b01110000) >>> 4) + 1;
+        image.colorResolution = 1 << colResPower;
+        image.sortFlag = (packedFields & 0b00001000) >>> 3 == 1;
+        final int globColTblSizePower = (packedFields & 7) + 1; // Bits 0-2
+        image.globalColorTableSize = 1 << globColTblSizePower; // 2^(N+1), see spec
         image.backgroundColorIndex = is.readUnsignedByte();
         image.pixelAspectRatio = is.readUnsignedByte();
 
@@ -487,7 +512,7 @@ public class GifImageReader implements AutoCloseable {
      *
      * @param is
      *         The {@link ImageInputStream} instance to read and process the data from
-     * @param image
+     * @param metadata
      *         The {@link GifMetaData} instance where the processed data will be written to
      *
      * @return The block code that has been processed successfully or {@code null} if we have reached the end of file
@@ -497,31 +522,31 @@ public class GifImageReader implements AutoCloseable {
      * @throws IOException
      *         When an I/O error occurs
      */
-    private Block readBlock(final ImageInputStream is, final GifMetaData image, Function<BlockIdentifier, Boolean> skip) throws IOException {
+    private Block readBlock(final ImageInputStream is, final GifMetaData metadata, BlockFilter filter) throws IOException {
         //log.debug("readBlock() : ({}) Scanning for blocks...", is.getStreamPosition());
         try {
             var block = Block.get(is.readUnsignedByte());
-            if (skip == null) {
-                skip = DO_NOT_SKIP;
+            if (filter == null) {
+                filter = DO_NOT_SKIP;
                 log.debug("readBlock() : Found block (0x{} - {} - {})", toHexString(block.getCodeByte()), block.getName(), block.getCategory().name());
             }
             switch (block) {
                 //Extension blocks
                 case EXTENSION: {
                     //log.debug("readBlock() : Found an Extension Block (0x{} - {})", toHexString(block.getCodeByte()), block.getCategory().name());
-                    readExtensionBlock(is, image, skip);
+                    readExtensionBlock(is, metadata, filter);
                     break;
                 }
                 //Image descriptor (process the image frames)
                 case IMAGE_DESCRIPTOR: {
                     //log.debug("readBlock() : Found an Image Descriptor Block (0x{} - {})", toHexString(block.getCodeByte()), block.getCategory().name());
-                    GifFrame frame = getOrInitializeFrame(image, skip.apply(Block.INITIALIZE));
+                    var frame = getOrInitializeFrame(metadata, filter.filter(Block.INITIALIZE));
                     //read image descriptor block
-                    readImageDescriptorBlock(is, frame, skip.apply(block));
+                    readImageDescriptorBlock(is, frame, filter.filter(block));
                     //(OPTIONAL) If local color table flag is set, process it
-                    readLocalColorTable(is, frame, skip.apply(Block.LOCAL_COLOR_TABLE));
+                    readLocalColorTable(is, frame, filter);
                     //Read image data
-                    readImageDataBlocks(is, frame, skip.apply(Block.IMAGE_DATA));
+                    readImageDataBlocks(is, frame, filter);
                     //Reset current frame
                     endImageFrame();
                     break;
@@ -553,9 +578,9 @@ public class GifImageReader implements AutoCloseable {
      * @throws IOException
      *         When an I/O related error occurs
      */
-    private void readExtensionBlock(ImageInputStream is, GifMetaData image, Function<BlockIdentifier, Boolean> skip) throws IOException {
+    private void readExtensionBlock(ImageInputStream is, GifMetaData image, BlockFilter skip) throws IOException {
         var extBlock = ExtensionBlock.get(is.readUnsignedByte());
-        boolean skipValue = skip.apply(extBlock);
+        boolean skipValue = skip.filter(extBlock);
         if (!skipValue) {
             log.debug("readExtensionBlock() : Found extension block ({} - {})", toHexString(extBlock.getCodeByte()), extBlock.getName());
         }
@@ -614,8 +639,8 @@ public class GifImageReader implements AutoCloseable {
      *         When an I/O error occurs
      * @apiNote Required Version.  87a.
      */
-    private void readImageDataBlocks(ImageInputStream is, GifFrame frame, boolean skip) throws IOException {
-        if (skip) {
+    private void readImageDataBlocks(ImageInputStream is, GifFrame frame, BlockFilter skip) throws IOException {
+        if (skip.filter(Block.IMAGE_DATA)) {
             //Read image data
             is.skipBytes(1); //image size
             skipDataBlocks(is); //skip image datta
@@ -639,42 +664,33 @@ public class GifImageReader implements AutoCloseable {
 
         //transfer all the LZW encoded bytes to a temporary buffer
         var encodedData = new byte[totalEncodedBytes];
-        int blockSize, offset = 0;
+        int blockSize, bytesRead = 0, bytesSkipped = 0;
         while ((blockSize = is.readUnsignedByte()) > 0) {
-            offset += is.read(encodedData, offset, blockSize);
-        }
-
-        assert totalEncodedBytes == offset;
-
-        //Start decoding
-        frame.data = new int[frame.width * frame.height];
-        decoder.decode(frame, encodedData, frame.data);
-
-        //If interlace flag is set,
-        if (frame.isInterlaced())
-            frame.data = ImageOps.deinterlace(frame);
-
-        //if (true) throw new IOException("Break");
-
-        printDebugHeader("END: Image Block (Total size: {})", offset);
-    }
-
-    private static void outputDebugArray(String path, int[] data) throws IOException {
-        try (var out = new FileOutputStream(path)) {
-            var tmp = ByteBuffer.allocate(data.length * 4).order(ByteOrder.LITTLE_ENDIAN);
-            for (var d : data) {
-                tmp.putInt(d);
+            if (skip.filter(Block.IMAGE_DATA_BLOCK, blockSize, is)) {
+                bytesSkipped += is.skipBytes(blockSize);
+                continue;
             }
-            out.write(tmp.array());
-            out.flush();
+            bytesRead += is.read(encodedData, bytesRead, blockSize);
         }
-    }
 
-    /**
-     * @see #readImageDescriptorBlock(ImageInputStream, GifFrame, boolean)
-     */
-    private void readImageDescriptorBlock(final ImageInputStream is, final GifFrame frame) throws IOException {
-        readImageDescriptorBlock(is, frame, false);
+        assert bytesSkipped != 0 || totalEncodedBytes == bytesRead;
+
+        //start decoding if we have no skipped bytes
+        if (bytesSkipped == 0) {
+            //Start decoding
+            try (var decoder = new GifDecoder(frame)) {
+                decoder.decode(encodedData);
+            }
+            //If interlace flag is set,
+            if (frame.isInterlaced())
+                frame.data = ImageOps.deinterlace(frame);
+        } else {
+            log.debug("{}) Image data blocks were skipped. Decoding and/or deinterlacing will not take placee", frame.index);
+            frame.skipped = true;
+            frame.data = null;
+        }
+
+        printDebugHeader("END: Image Block (Total size: {})", bytesRead);
     }
 
     /**
@@ -705,8 +721,8 @@ public class GifImageReader implements AutoCloseable {
      *
      * @apiNote Required Version. 87a.
      * @implNote This skip featture does not include skipping the local color table and image data blocks
-     * @see #readLocalColorTable(ImageInputStream, GifFrame, boolean)
-     * @see #readImageDataBlocks(ImageInputStream, GifFrame, boolean)
+     * @see #readLocalColorTable(ImageInputStream, GifFrame, BlockFilter)
+     * @see #readImageDataBlocks(ImageInputStream, GifFrame, BlockFilter)
      */
     private void readImageDescriptorBlock(ImageInputStream is, GifFrame frame, boolean skip) throws IOException {
         //save the start position of this block for future reference
@@ -1036,16 +1052,16 @@ public class GifImageReader implements AutoCloseable {
      *         The {@link ImageInputStream} instance to read the data from
      * @param frame
      *         The {@link GifFrame} instance where the local table will be stored
-     * @param skip
-     *         {@code True} if we should skip this block. If true, descriptor parameter is required.
+     * @param filter
+     *         Optional block filter. If true, descriptor parameter is required.
      *
      * @see #readColorTable(ImageInputStream, int[])
      */
-    private int readLocalColorTable(ImageInputStream is, GifFrame frame, boolean skip) throws IOException {
+    private int readLocalColorTable(ImageInputStream is, GifFrame frame, BlockFilter filter) throws IOException {
         long startPos = is.getStreamPosition();
 
         //Skip local color table
-        if (skip) {
+        if (filter.filter(Block.LOCAL_COLOR_TABLE)) {
             //since we know that a local color table is preceded with an image descriptor block,
             // we will need to extract the previous bytes to get some information pertaining to the local color table
             if (lastImageDescriptorOffset <= 0)
@@ -1093,9 +1109,9 @@ public class GifImageReader implements AutoCloseable {
      *
      * @see #readColorTable(ImageInputStream, int[])
      */
-    private void readGlobalColorTable(final ImageInputStream is, final GifMetaData image, boolean skip) throws IOException {
+    private void readGlobalColorTable(final ImageInputStream is, final GifMetaData image, BlockFilter filter) throws IOException {
         //Skip local color table
-        if (skip) {
+        if (filter.filter(Block.GLOBAL_COLOR_TABLE)) {
             //since we know tha a local color table is preceded with an image descriptor block,
             // we will need to extract the previous bytes to get some information pertaining to the local color table
             if (lastLogicalScreenDescriptorOffset <= 0)
@@ -1148,7 +1164,7 @@ public class GifImageReader implements AutoCloseable {
      * Marks the end of processing for the Image Frame
      */
     private void endImageFrame() {
-        this.lastFrame = this.currentFrame;
+        this.lastFrame = (this.currentFrame != null && !this.currentFrame.skipped) ? this.currentFrame : null;
         this.currentFrame = null;
     }
 
@@ -1189,7 +1205,7 @@ public class GifImageReader implements AutoCloseable {
             is.mark();
             is.seek(0);
 
-            final Function<BlockIdentifier, Boolean> counter = blockIdentifier -> {
+            final BlockFilter counter = (blockIdentifier, data) -> {
                 if (Block.IMAGE_DESCRIPTOR.equals(blockIdentifier))
                     count[0]++;
                 return true;
@@ -1460,7 +1476,7 @@ public class GifImageReader implements AutoCloseable {
         this.lastFrame = null;
         this.currentFrame = null;
         this.metadata = null;
-        this.frameIndex = -1;
+        this.frameIndex = 0;
     }
 
     @Override

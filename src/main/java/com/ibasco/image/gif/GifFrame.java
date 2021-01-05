@@ -51,6 +51,8 @@ public class GifFrame {
 
     int index;
 
+    boolean skipped; //internal use only
+
     GifFrame(int index, GifMetaData metadata) {
         this.metadata = metadata;
         this.index = index;

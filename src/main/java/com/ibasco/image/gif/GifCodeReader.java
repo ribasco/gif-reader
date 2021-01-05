@@ -1,8 +1,9 @@
 package com.ibasco.image.gif;
 
+import java.io.Closeable;
 import java.io.IOException;
 
-public interface GifCodeReader {
+public interface GifCodeReader extends Closeable {
 
     int read() throws IOException;
 
