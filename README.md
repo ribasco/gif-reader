@@ -20,13 +20,13 @@ JDK 11+
 
 ~~~java
 var file=new File("/home/user/example.gif");
-        try(var reader=new GifImageReader(file)){
-        while(reader.hasRemaining()){
-        GifFrame frame=reader.read();
+try (var reader = new GifImageReader(file)) {
+    while (reader.hasRemaining()) {
+        GifFrame frame = reader.read();
         //note: Use frame.getData() to extract the raw image data (in INT ARGB format)   
-        System.out.printf("Index: %d, Frame: %d x %d",frame.getIndex(),frame.getWidth(),frame.getHeight());
-        }
-        }
+        System.out.printf("Index: %d, Frame: %d x %d", frame.getIndex(), frame.getWidth(), frame.getHeight());
+    }
+}
 ~~~
 
 *Using with JavaFX (Converting each frame to WritableImage)*
@@ -34,24 +34,24 @@ var file=new File("/home/user/example.gif");
 ```java
 var source=new File("/home/user/example.gif");
 
-        try(var reader=new GifImageReader(source)){
-        int index=0;
-        //scans the entire image and counts the number of frames available (optional)
-        int totalFrames=reader.getTotalFrames();
-        while(reader.hasRemaining()){
+try(var reader=new GifImageReader(source)){
+    int index=0;
+    //scans the entire image and counts the number of frames available (optional)
+    int totalFrames=reader.getTotalFrames();
+    while(reader.hasRemaining()){
         var frame=reader.read();
         var frameImage=toFxImage(frame);
         //do what you wan with frameImage
-        }
-        }
+    }
+}
 
 private static WritableImage toFxImage(GifFrame frame){
-        //Method #1: Using Pixel Writer 
-        //img.getPixelWriter().setPixels(0, 0, frame.getWidth(), frame.getHeight(), WritablePixelFormat.getIntArgbInstance(), pixels, 0, frame.getWidth());
+    //Method #1: Using Pixel Writer 
+    //img.getPixelWriter().setPixels(0, 0, frame.getWidth(), frame.getHeight(), WritablePixelFormat.getIntArgbInstance(), pixels, 0, frame.getWidth());
 
-        //Method #2: Using PixelBuffer    
-        return new WritableImage(new PixelBuffer<>(frame.getWidth(),frame.getHeight(),IntBuffer.wrap(frame.getData()),WritablePixelFormat.getIntArgbPreInstance()));
-        }
+    //Method #2: Using PixelBuffer    
+    return new WritableImage(new PixelBuffer<>(frame.getWidth(),frame.getHeight(),IntBuffer.wrap(frame.getData()),WritablePixelFormat.getIntArgbPreInstance()));
+}
 ```
 
 *Using Block Filters*
@@ -60,29 +60,29 @@ Block filters allows you to inspect the current block being processed on-the-fly
 
 ~~~java
 var file=new File("/home/user/example.gif");
-        try(var reader=new GifImageReader(file)){
-        var metadata=reader.getMetadata();
-        //This block filter lets you skip the first image frame
-        reader.setFilter(new GifImageReader.BlockFilter(){
-private int count=0;
-@Override
-public boolean filter(BlockIdentifier block,Object...data){
-        if(Block.IMAGE_DATA_BLOCK.equals(block)){
-        return count++==0;
+try(var reader=new GifImageReader(file)){
+    var metadata=reader.getMetadata();
+    //This block filter lets you skip the first image frame
+    reader.setFilter(new GifImageReader.BlockFilter(){
+        private int count=0;
+        @Override
+        public boolean filter(BlockIdentifier block,Object...data){
+            if(Block.IMAGE_DATA_BLOCK.equals(block)){
+                return count++==0;
+            }
+            //do not skip the rest
+            return false;
         }
-        //do not skip the rest
-        return false;
-        }
-        });
-        int frameCount=0;
-        while(reader.hasRemaining()){
+    });
+    int frameCount=0;
+    while(reader.hasRemaining()){
         var frame=reader.read();
         if(frame==null)
-        continue;
+            continue;
         frameCount++;
-        }
-        System.out.println("Total frames processed: "+frameCount);
-        }
+    }
+    System.out.println("Total frames processed: "+frameCount);
+}
 ~~~
 
 ### Test results and Comparison
