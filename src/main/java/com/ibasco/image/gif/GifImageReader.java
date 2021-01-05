@@ -836,6 +836,7 @@ public final class GifImageReader implements AutoCloseable {
         plainText.charCellHeight = is.readUnsignedByte();
         plainText.textForegroundColorIndex = is.readUnsignedByte();
         plainText.textBackgroundColorIndex = is.readUnsignedByte();
+        plainText.plainTextData = new ArrayList<>();
 
         log.debug("Extension Block Size: {}", extBlockSize);
         log.debug("Text Grid Left Pos: {}", plainText.leftPos);
@@ -849,7 +850,6 @@ public final class GifImageReader implements AutoCloseable {
 
         readDataBlocks(is, (data, blockSize) -> {
             var label = new String(data.array());
-            plainText.plainTextData = new ArrayList<>();
             plainText.plainTextData.add(label);
             log.debug("Plain text label: {}", label);
         });
