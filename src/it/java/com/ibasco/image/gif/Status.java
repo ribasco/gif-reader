@@ -26,7 +26,7 @@ public class Status {
 
     Exception error;
 
-    Status(File file, int frameCount, Exception error) {
+    public Status(File file, int frameCount, Exception error) {
         this.file = file;
         this.frameCount = frameCount;
         this.error = error;

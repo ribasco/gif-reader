@@ -19,7 +19,9 @@ package com.ibasco.image.gif;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -27,12 +29,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 
-public class GifReaderDemo {
-
-    private static final Logger log = LoggerFactory.getLogger(GifReaderDemo.class);
+public class KevWeinerDemo {
+    private static final Logger log = LoggerFactory.getLogger(KevWeinerDemo.class);
 
     public static void main(String[] args) throws Exception {
-        var samplesDir = Path.of(System.getProperty("user.dir"), "samples").toFile();
+        File samplesDir = Path.of(System.getProperty("user.dir"), "samples").toFile();
         //var samplesDir = new File("/home/ribasco/media/pictures");
         var imageFiles = Arrays.stream(Objects.requireNonNull(samplesDir.list((dir1, name) -> name.toLowerCase().endsWith(".gif")))).map(s -> Path.of(samplesDir.getAbsolutePath(), s)).map(Path::toFile);
         var imageList = imageFiles.toArray(File[]::new);
@@ -52,29 +53,20 @@ public class GifReaderDemo {
             for (var file : files) {
                 int frameCount = 0;
                 lastFileProcessed = file;
-                try (var reader = new GifImageReader(file)) {
-                    var metadata = reader.getMetadata();
-                    /*reader.setFilter(new GifImageReader.BlockFilter() {
-                        private int count = 0;
-                        @Override
-                        public boolean filter(BlockIdentifier block, Object... data) {
-                            if (Block.IMAGE_DATA_BLOCK.equals(block)) {
-                                return count++ == 0;
-                            }
-                            return false;
-                        }
-                    });*/
-                    while (reader.hasRemaining()) {
-                        var frame = reader.read();
-                        if (frame == null)
-                            continue;
+
+                try {
+                    var decoder = new KevWeinerGifDecoder();
+                    decoder.read(new FileInputStream(file));
+                    int maxFrames = decoder.getFrameCount();
+
+                    for (int index = 0; index < maxFrames; index++) {
+                        BufferedImage frame = decoder.getFrame(index);
                         totalFrames++;
                         frameCount++;
                     }
                     statusList.add(new Status(file, frameCount, null));
-                } catch (Exception ex) {
-                    statusList.add(new Status(file, frameCount, ex));
-                    ex.printStackTrace();
+                } catch (Exception e) {
+                    statusList.add(new Status(file, frameCount, e));
                 } finally {
                     totalImages++;
                     log.info("Processed file: {} (Total frames: {})", file.getName(), frameCount);

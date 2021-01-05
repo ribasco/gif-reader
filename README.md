@@ -4,7 +4,7 @@ A pure java implementation of the  [GIF89a specification](https://www.w3.org/Gra
 
 #### Motivation
 
-After testing some GIF decoding libraries available (ImageIO, Apache Commons Imaging) for Java, I found that there were still cases where some animated images were not processed or handled properly, resulting in deformation on the output image or simply returning in error. This library was developed with the intention of addressing these issues (e.g. `Bad Code`, `ArrayIndexOutOfBoundsException`).
+After testing some GIF decoding libraries available (ImageIO, Apache Commons Imaging, DhyanB...) for Java, I found that there were still cases where some animated images were not processed or handled properly, resulting in deformation on the output image or simply returning in error (due to `OutOfMemoryError`). This library was developed with the intention of addressing these issues.
 
 #### Minimum JDK Version
 
@@ -87,9 +87,11 @@ try(var reader=new GifImageReader(file)){
 
 ### Test results and Comparison
 
+Below are gathered test results from some known open-source libraries/implementation's of a GIF Decoder for java.
+
 All images used in this test can be found at the [samples](https://github.com/ribasco/gif-reader/tree/master/samples) directory
 
-**GifReader Test**
+**GifReader Test (GifReaderDemo.java)**
 
 Note: A buffer overflow warning is shown below to indicate that the output data was trimmed by the decoder.
 
@@ -100,11 +102,14 @@ START
 Processed file: sample09-nsfw.gif (Total frames: 20)
 Processed file: sample03.gif (Total frames: 49)
 Processed file: sample05.gif (Total frames: 101)
+Processed file: sample10-big.gif (Total frames: 3435)
 Processed file: sample06.gif (Total frames: 10)
+Processed file: sample11-big.gif (Total frames: 741)
 Processed file: sample02.gif (Total frames: 61)
 Processed file: sample04.gif (Total frames: 10)
-13:08:48.629 [main] WARN  com.ibasco.image.gif.GifDecoder - Buffer overflow: There is not enough space to store 2 elements in the output buffer. Data will be trimmed (Remaining Bytes: 1)
-13:08:48.648 [main] WARN  com.ibasco.image.gif.GifDecoder - Buffer overflow: There is not enough space to store 5 elements in the output buffer. Data will be trimmed (Remaining Bytes: 4)
+Processed file: sample12-big-nsfw.gif (Total frames: 980)
+17:36:51.326 [main] WARN  com.ibasco.image.gif.GifDecoder - Buffer overflow: There is not enough space to store 2 elements in the output buffer. Data will be trimmed (Remaining Bytes: 1)
+17:36:51.341 [main] WARN  com.ibasco.image.gif.GifDecoder - Buffer overflow: There is not enough space to store 5 elements in the output buffer. Data will be trimmed (Remaining Bytes: 4)
 Processed file: sample08-nsfw.gif (Total frames: 24)
 Processed file: sample01.gif (Total frames: 30)
 Processed file: sample07.gif (Total frames: 3)
@@ -114,19 +119,24 @@ STATUS REPORT
 FILE: sample09-nsfw.gif         FRAMES: 20   , ERROR: None
 FILE: sample03.gif              FRAMES: 49   , ERROR: None
 FILE: sample05.gif              FRAMES: 101  , ERROR: None
+FILE: sample10-big.gif          FRAMES: 3435 , ERROR: None
 FILE: sample06.gif              FRAMES: 10   , ERROR: None
+FILE: sample11-big.gif          FRAMES: 741  , ERROR: None
 FILE: sample02.gif              FRAMES: 61   , ERROR: None
 FILE: sample04.gif              FRAMES: 10   , ERROR: None
+FILE: sample12-big-nsfw.gif     FRAMES: 980  , ERROR: None
 FILE: sample08-nsfw.gif         FRAMES: 24   , ERROR: None
 FILE: sample01.gif              FRAMES: 30   , ERROR: None
 FILE: sample07.gif              FRAMES: 3    , ERROR: None
 ====================================================
 END
 ====================================================
-Processed a total of 308 frames from 9 images (Took 906 ms, Last File: sample07.gif)
+Processed a total of 5464 frames from 12 images (Took 27987 ms, Last File: sample07.gif)
 ```
 
-**Javax ImageIO**
+![GifImageReader Test](./images/jprofiler-GifReaderDemo.png)
+
+**Javax ImageIO (ImageIODemo.java)**
 
 ```text
 ====================================================
@@ -135,9 +145,12 @@ START
 Processed file: sample09-nsfw.gif (Total frames: 9)
 Processed file: sample03.gif (Total frames: 0)
 Processed file: sample05.gif (Total frames: 0)
+Processed file: sample10-big.gif (Total frames: 3435)
 Processed file: sample06.gif (Total frames: 0)
+Processed file: sample11-big.gif (Total frames: 741)
 Processed file: sample02.gif (Total frames: 0)
 Processed file: sample04.gif (Total frames: 0)
+Processed file: sample12-big-nsfw.gif (Total frames: 980)
 Processed file: sample08-nsfw.gif (Total frames: 24)
 Processed file: sample01.gif (Total frames: 0)
 Processed file: sample07.gif (Total frames: 3)
@@ -147,19 +160,24 @@ STATUS REPORT
 FILE: sample09-nsfw.gif         FRAMES: 9    , ERROR: Index 4096 out of bounds for length 4096
 FILE: sample03.gif              FRAMES: 0    , ERROR: Index 4096 out of bounds for length 4096
 FILE: sample05.gif              FRAMES: 0    , ERROR: Index 4096 out of bounds for length 4096
-FILE: sample06.gif              FRAMES: 0    , ERROR: Index 4096 out of bounds for length 4096
-FILE: sample02.gif              FRAMES: 0    , ERROR: Index 4096 out of bounds for length 4096
-FILE: sample04.gif              FRAMES: 0    , ERROR: Index 4096 out of bounds for length 4096
+FILE: sample10-big.gif          FRAMES: 3435 , ERROR: None
+FILE: sample06.gif              FRAMES: 0    , ERROR: null
+FILE: sample11-big.gif          FRAMES: 741  , ERROR: None
+FILE: sample02.gif              FRAMES: 0    , ERROR: null
+FILE: sample04.gif              FRAMES: 0    , ERROR: null
+FILE: sample12-big-nsfw.gif     FRAMES: 980  , ERROR: None
 FILE: sample08-nsfw.gif         FRAMES: 24   , ERROR: None
-FILE: sample01.gif              FRAMES: 0    , ERROR: Index 4096 out of bounds for length 4096
+FILE: sample01.gif              FRAMES: 0    , ERROR: null
 FILE: sample07.gif              FRAMES: 3    , ERROR: None
 ====================================================
 END
 ====================================================
-Processed a total of 36 frames from 9 images (Took 189 ms, Last File: sample07.gif)
+Processed a total of 5192 frames from 12 images (Took 17030 ms, Last File: sample07.gif)
 ```
 
-**Apache Commons Imaging**
+![ImageIO Test](./images/jprofiler-ImageIODemo.png)
+
+**Apache Commons Imaging (ApacheImagingDemo.java)**
 
 ```text
 ====================================================
@@ -168,9 +186,12 @@ START
 Processed file: sample09-nsfw.gif (Total frames: 0)
 Processed file: sample03.gif (Total frames: 49)
 Processed file: sample05.gif (Total frames: 101)
+Processed file: sample10-big.gif (Total frames: 3435)
 Processed file: sample06.gif (Total frames: 10)
+Processed file: sample11-big.gif (Total frames: 741)
 Processed file: sample02.gif (Total frames: 61)
 Processed file: sample04.gif (Total frames: 10)
+Processed file: sample12-big-nsfw.gif (Total frames: 980)
 Processed file: sample08-nsfw.gif (Total frames: 0)
 Processed file: sample01.gif (Total frames: 30)
 Processed file: sample07.gif (Total frames: 0)
@@ -180,14 +201,172 @@ STATUS REPORT
 FILE: sample09-nsfw.gif         FRAMES: 0    , ERROR: Bad Code: -1 codes: 258 code_size: 9, table: 4096
 FILE: sample03.gif              FRAMES: 49   , ERROR: None
 FILE: sample05.gif              FRAMES: 101  , ERROR: None
+FILE: sample10-big.gif          FRAMES: 3435 , ERROR: None
 FILE: sample06.gif              FRAMES: 10   , ERROR: None
+FILE: sample11-big.gif          FRAMES: 741  , ERROR: None
 FILE: sample02.gif              FRAMES: 61   , ERROR: None
 FILE: sample04.gif              FRAMES: 10   , ERROR: None
+FILE: sample12-big-nsfw.gif     FRAMES: 980  , ERROR: None
 FILE: sample08-nsfw.gif         FRAMES: 0    , ERROR: Bad Code: -1 codes: 66 code_size: 7, table: 4096
 FILE: sample01.gif              FRAMES: 30   , ERROR: None
 FILE: sample07.gif              FRAMES: 0    , ERROR: Bad Code: -1 codes: 258 code_size: 9, table: 4096
 ====================================================
 END
 ====================================================
-Processed a total of 261 frames from 9 images (Took 1066 ms, Last File: sample07.gif)
+Processed a total of 5417 frames from 12 images (Took 19703 ms, Last File: sample07.gif)
 ```
+
+![Apache Commons Imaging Test](./images/jprofiler-ApacheImagingDemo.png)
+
+**DhyanB's GifDecoder (DhyanBDemo.java)**
+
+Encountered an `OutOfMemoryError` in first attempt. Failed at `sample12-big-nsfw.gif`
+
+* First Attempt (OutOfMemoryError):
+
+    ```text
+    ====================================================
+    START
+    ====================================================
+    Processed file: sample09-nsfw.gif (Total frames: 20)
+    Processed file: sample03.gif (Total frames: 49)
+    Processed file: sample05.gif (Total frames: 101)
+    Processed file: sample10-big.gif (Total frames: 3435)
+    Processed file: sample06.gif (Total frames: 10)
+    Processed file: sample11-big.gif (Total frames: 741)
+    Processed file: sample02.gif (Total frames: 61)
+    Processed file: sample04.gif (Total frames: 10)
+    Processed file: sample12-big-nsfw.gif (Total frames: 876)
+    Processed a total of 5303 frames from 9 images (Took 23876 ms, Last File: sample12-big-nsfw.gif)
+    Exception in thread "main" java.lang.OutOfMemoryError: Java heap space
+        at com.ibasco.image.gif.DhyanBGifDecoder$GifImage.decode(DhyanBGifDecoder.java:199)
+        at com.ibasco.image.gif.DhyanBGifDecoder$GifImage.drawFrame(DhyanBGifDecoder.java:274)
+        at com.ibasco.image.gif.DhyanBGifDecoder$GifImage.getFrame(DhyanBGifDecoder.java:366)
+        at com.ibasco.image.gif.DhyanBDemo.processImageFiles(DhyanBDemo.java:63)
+        at com.ibasco.image.gif.DhyanBDemo.main(DhyanBDemo.java:41)
+    
+    Process finished with exit code 1
+    ```
+
+    ![DhyanB Test](./images/jprofiler-DhyanBDemo-01.png)
+
+* Second Attempt (Increased Heap):
+
+    > Update max heap to 3GB `-Xmx3072m`
+
+    ```text
+    ====================================================
+    START
+    ====================================================
+    Processed file: sample09-nsfw.gif (Total frames: 20)
+    Processed file: sample03.gif (Total frames: 49)
+    Processed file: sample05.gif (Total frames: 101)
+    Processed file: sample10-big.gif (Total frames: 3435)
+    Processed file: sample06.gif (Total frames: 10)
+    Processed file: sample11-big.gif (Total frames: 741)
+    Processed file: sample02.gif (Total frames: 61)
+    Processed file: sample04.gif (Total frames: 10)
+    Processed file: sample12-big-nsfw.gif (Total frames: 980)
+    Processed file: sample08-nsfw.gif (Total frames: 24)
+    Processed file: sample01.gif (Total frames: 30)
+    Processed file: sample07.gif (Total frames: 3)
+    ====================================================
+    STATUS REPORT
+    ====================================================
+    FILE: sample09-nsfw.gif         FRAMES: 20   , ERROR: None
+    FILE: sample03.gif              FRAMES: 49   , ERROR: None
+    FILE: sample05.gif              FRAMES: 101  , ERROR: None
+    FILE: sample10-big.gif          FRAMES: 3435 , ERROR: None
+    FILE: sample06.gif              FRAMES: 10   , ERROR: None
+    FILE: sample11-big.gif          FRAMES: 741  , ERROR: None
+    FILE: sample02.gif              FRAMES: 61   , ERROR: None
+    FILE: sample04.gif              FRAMES: 10   , ERROR: None
+    FILE: sample12-big-nsfw.gif     FRAMES: 980  , ERROR: None
+    FILE: sample08-nsfw.gif         FRAMES: 24   , ERROR: None
+    FILE: sample01.gif              FRAMES: 30   , ERROR: None
+    FILE: sample07.gif              FRAMES: 3    , ERROR: None
+    ====================================================
+    END
+    ====================================================
+    Processed a total of 5464 frames from 12 images (Took 21810 ms, Last File: sample07.gif)
+    ```
+
+    ![DhyanB Test](./images/jprofiler-DhyanBDemo-02.png)
+  
+**Kevin Weiner's GIFDecoder (KevWeinerDemo.java)**
+
+* First Attempt (OutOfMemoryError):
+
+  ```text
+  ====================================================
+  START
+  ====================================================
+  Processed file: sample09-nsfw.gif (Total frames: 20)
+  Processed file: sample03.gif (Total frames: 49)
+  Processed file: sample05.gif (Total frames: 101)
+  Processed file: sample10-big.gif (Total frames: 3435)
+  Processed file: sample06.gif (Total frames: 10)
+  Processed file: sample11-big.gif (Total frames: 741)
+  Processed file: sample02.gif (Total frames: 61)
+  Processed file: sample04.gif (Total frames: 10)
+  Processed file: sample12-big-nsfw.gif (Total frames: 0)
+  Processed a total of 4427 frames from 9 images (Took 16848 ms, Last File: sample12-big-nsfw.gif)
+  Exception in thread "main" java.lang.OutOfMemoryError: Java heap space
+      at java.desktop/java.awt.image.DataBufferInt.<init>(DataBufferInt.java:75)
+      at java.desktop/java.awt.image.Raster.createPackedRaster(Raster.java:467)
+      at java.desktop/java.awt.image.DirectColorModel.createCompatibleWritableRaster(DirectColorModel.java:1032)
+      at java.desktop/java.awt.image.BufferedImage.<init>(BufferedImage.java:351)
+      at com.ibasco.image.gif.KevWeinerGifDecoder.readImage(KevWeinerGifDecoder.java:703)
+      at com.ibasco.image.gif.KevWeinerGifDecoder.readContents(KevWeinerGifDecoder.java:582)
+      at com.ibasco.image.gif.KevWeinerGifDecoder.read(KevWeinerGifDecoder.java:307)
+      at com.ibasco.image.gif.KevWeinerDemo.processImageFiles(KevWeinerDemo.java:59)
+      at com.ibasco.image.gif.KevWeinerDemo.main(KevWeinerDemo.java:40)
+  
+  Process finished with exit code 1
+  ```
+
+  ![KevWeinerDemo](./images/jprofiler-KevWeinerDemo-01.png)
+
+
+* Second Attempt (Increased Heap):
+
+  > Update max heap to 3GB `-Xmx3072m`
+
+  ```text
+  ====================================================
+  START
+  ====================================================
+  Processed file: sample09-nsfw.gif (Total frames: 20)
+  Processed file: sample03.gif (Total frames: 49)
+  Processed file: sample05.gif (Total frames: 101)
+  Processed file: sample10-big.gif (Total frames: 3435)
+  Processed file: sample06.gif (Total frames: 10)
+  Processed file: sample11-big.gif (Total frames: 741)
+  Processed file: sample02.gif (Total frames: 61)
+  Processed file: sample04.gif (Total frames: 10)
+  Processed file: sample12-big-nsfw.gif (Total frames: 980)
+  Processed file: sample08-nsfw.gif (Total frames: 24)
+  Processed file: sample01.gif (Total frames: 30)
+  Processed file: sample07.gif (Total frames: 3)
+  ====================================================
+  STATUS REPORT
+  ====================================================
+  FILE: sample09-nsfw.gif         FRAMES: 20   , ERROR: None
+  FILE: sample03.gif              FRAMES: 49   , ERROR: None
+  FILE: sample05.gif              FRAMES: 101  , ERROR: None
+  FILE: sample10-big.gif          FRAMES: 3435 , ERROR: None
+  FILE: sample06.gif              FRAMES: 10   , ERROR: None
+  FILE: sample11-big.gif          FRAMES: 741  , ERROR: None
+  FILE: sample02.gif              FRAMES: 61   , ERROR: None
+  FILE: sample04.gif              FRAMES: 10   , ERROR: None
+  FILE: sample12-big-nsfw.gif     FRAMES: 980  , ERROR: None
+  FILE: sample08-nsfw.gif         FRAMES: 24   , ERROR: None
+  FILE: sample01.gif              FRAMES: 30   , ERROR: None
+  FILE: sample07.gif              FRAMES: 3    , ERROR: None
+  ====================================================
+  END
+  ====================================================
+  Processed a total of 5464 frames from 12 images (Took 17657 ms, Last File: sample07.gif)
+  ```
+
+  ![KevWeinerDemo](./images/jprofiler-KevWeinerDemo-02.png)
