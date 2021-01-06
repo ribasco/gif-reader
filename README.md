@@ -237,11 +237,11 @@ Encountered an `OutOfMemoryError` in first attempt. Failed at `sample12-big-nsfw
     Processed file: sample12-big-nsfw.gif (Total frames: 876)
     Processed a total of 5303 frames from 9 images (Took 23876 ms, Last File: sample12-big-nsfw.gif)
     Exception in thread "main" java.lang.OutOfMemoryError: Java heap space
-        at com.ibasco.image.gif.DhyanBGifDecoder$GifImage.decode(DhyanBGifDecoder.java:199)
-        at com.ibasco.image.gif.DhyanBGifDecoder$GifImage.drawFrame(DhyanBGifDecoder.java:274)
-        at com.ibasco.image.gif.DhyanBGifDecoder$GifImage.getFrame(DhyanBGifDecoder.java:366)
-        at com.ibasco.image.gif.DhyanBDemo.processImageFiles(DhyanBDemo.java:63)
-        at com.ibasco.image.gif.DhyanBDemo.main(DhyanBDemo.java:41)
+        at com.ibasco.image.gif.demo.DhyanBGifDecoder$GifImage.decode(DhyanBGifDecoder.java:199)
+        at com.ibasco.image.gif.demo.DhyanBGifDecoder$GifImage.drawFrame(DhyanBGifDecoder.java:274)
+        at com.ibasco.image.gif.demo.DhyanBGifDecoder$GifImage.getFrame(DhyanBGifDecoder.java:366)
+        at com.ibasco.image.gif.demo.DhyanBDemo.processImageFiles(DhyanBDemo.java:63)
+        at com.ibasco.image.gif.demo.DhyanBDemo.main(DhyanBDemo.java:41)
     
     Process finished with exit code 1
     ```
@@ -314,11 +314,11 @@ Encountered an `OutOfMemoryError` in first attempt. Failed at `sample12-big-nsfw
       at java.desktop/java.awt.image.Raster.createPackedRaster(Raster.java:467)
       at java.desktop/java.awt.image.DirectColorModel.createCompatibleWritableRaster(DirectColorModel.java:1032)
       at java.desktop/java.awt.image.BufferedImage.<init>(BufferedImage.java:351)
-      at com.ibasco.image.gif.KevWeinerGifDecoder.readImage(KevWeinerGifDecoder.java:703)
-      at com.ibasco.image.gif.KevWeinerGifDecoder.readContents(KevWeinerGifDecoder.java:582)
-      at com.ibasco.image.gif.KevWeinerGifDecoder.read(KevWeinerGifDecoder.java:307)
-      at com.ibasco.image.gif.KevWeinerDemo.processImageFiles(KevWeinerDemo.java:59)
-      at com.ibasco.image.gif.KevWeinerDemo.main(KevWeinerDemo.java:40)
+      at com.ibasco.image.gif.demo.KevWeinerGifDecoder.readImage(KevWeinerGifDecoder.java:703)
+      at com.ibasco.image.gif.demo.KevWeinerGifDecoder.readContents(KevWeinerGifDecoder.java:582)
+      at com.ibasco.image.gif.demo.KevWeinerGifDecoder.read(KevWeinerGifDecoder.java:307)
+      at com.ibasco.image.gif.demo.KevWeinerDemo.processImageFiles(KevWeinerDemo.java:59)
+      at com.ibasco.image.gif.demo.KevWeinerDemo.main(KevWeinerDemo.java:40)
   
   Process finished with exit code 1
   ```

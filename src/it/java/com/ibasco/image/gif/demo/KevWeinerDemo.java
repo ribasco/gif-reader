@@ -14,21 +14,27 @@
  * limitations under the License.
  */
 
-package com.ibasco.image.gif;
+package com.ibasco.image.gif.demo;
 
-import org.apache.commons.imaging.Imaging;
-
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileInputStream;
 
-public class ApacheImagingDemo extends BaseDemoApp {
+public class KevWeinerDemo extends BaseDemoApp {
 
     public static void main(String[] args) throws Exception {
-        new ApacheImagingDemo().runDemo();
+        new KevWeinerDemo().runDemo();
     }
 
     @Override
     protected void readFile(File file) throws Exception {
-        int count = Imaging.getAllBufferedImages(file).size();
-        updateFrameCount(count);
+        var decoder = new KevWeinerGifDecoder();
+        decoder.read(new FileInputStream(file));
+        int maxFrames = decoder.getFrameCount();
+
+        for (int index = 0; index < maxFrames; index++) {
+            BufferedImage frame = decoder.getFrame(index);
+            updateFrameCount();
+        }
     }
 }

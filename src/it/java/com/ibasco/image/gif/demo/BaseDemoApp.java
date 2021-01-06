@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.ibasco.image.gif;
+package com.ibasco.image.gif.demo;
 
+import com.ibasco.image.gif.GifImageReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

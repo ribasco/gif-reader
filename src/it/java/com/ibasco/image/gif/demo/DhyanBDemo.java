@@ -14,31 +14,29 @@
  * limitations under the License.
  */
 
-package com.ibasco.image.gif;
+package com.ibasco.image.gif.demo;
 
-import javax.imageio.ImageIO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
-import java.io.IOException;
+import java.io.FileInputStream;
 
-public class ImageIODemo extends BaseDemoApp {
+public class DhyanBDemo extends BaseDemoApp {
+
+    private static final Logger log = LoggerFactory.getLogger(DhyanBDemo.class);
 
     public static void main(String[] args) throws Exception {
-        new ImageIODemo().runDemo();
+        new DhyanBDemo().runDemo();
     }
 
     @Override
     protected void readFile(File file) throws Exception {
-        try (var is = ImageIO.createImageInputStream(file)) {
-            var it = ImageIO.getImageReadersBySuffix("gif");
-            if (!it.hasNext())
-                throw new IOException("No reader found for gif");
-            var reader = it.next();
-            reader.setInput(is);
-            int numOfFrames = reader.getNumImages(true);
-            for (int frameIndex = 0; frameIndex < numOfFrames; frameIndex++) {
-                reader.read(frameIndex);
-                updateFrameCount();
-            }
+        var image = DhyanBGifDecoder.read(new FileInputStream(file));
+        int maxFrames = image.getFrameCount();
+        for (int index = 0; index < maxFrames; index++) {
+            var frame = image.getFrame(index);
+            updateFrameCount();
         }
     }
 }

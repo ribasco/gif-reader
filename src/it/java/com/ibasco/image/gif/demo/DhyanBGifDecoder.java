@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Dhyan Blum
+ * Copyright 2021 Rafael Luis L. Ibasco
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.ibasco.image.gif;
+package com.ibasco.image.gif.demo;
 
+import com.ibasco.image.gif.GifDecoder;
 import static java.lang.System.arraycopy;
 
 import java.awt.Color;

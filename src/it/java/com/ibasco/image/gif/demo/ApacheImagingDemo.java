@@ -14,27 +14,21 @@
  * limitations under the License.
  */
 
-package com.ibasco.image.gif;
+package com.ibasco.image.gif.demo;
+
+import org.apache.commons.imaging.Imaging;
 
 import java.io.File;
-import java.io.IOException;
 
-public class GifReaderDemo extends BaseDemoApp {
+public class ApacheImagingDemo extends BaseDemoApp {
 
     public static void main(String[] args) throws Exception {
-        new GifReaderDemo().runDemo();
+        new ApacheImagingDemo().runDemo();
     }
 
     @Override
-    protected void readFile(File file) throws IOException {
-        try (var reader = new GifImageReader(file)) {
-            //var metadata = reader.getMetadata();
-            while (reader.hasRemaining()) {
-                var frame = reader.read();
-                if (frame == null)
-                    continue;
-                updateFrameCount();
-            }
-        }
+    protected void readFile(File file) throws Exception {
+        int count = Imaging.getAllBufferedImages(file).size();
+        updateFrameCount(count);
     }
 }
