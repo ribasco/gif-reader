@@ -451,7 +451,7 @@ public final class GifImageReader implements AutoCloseable {
     public boolean hasRemaining() {
         if (metadata == null)
             return false;
-        return frameIndex < metadata.totalFrames;
+        return frameIndex < getTotalFrames();
     }
 
     /**
@@ -1401,16 +1401,13 @@ public final class GifImageReader implements AutoCloseable {
         try {
             is.mark();
             is.seek(0);
-
             final BlockFilter counter = (blockIdentifier, data) -> {
                 if (Block.IMAGE_DESCRIPTOR.equals(blockIdentifier))
                     count[0]++;
                 return true;
             };
-
             //process/skip headers
             readImageHeaderFields(is, null, SKIP_ALL);
-
             //process/skip the rest of the available blocks
             Block block;
             do {
