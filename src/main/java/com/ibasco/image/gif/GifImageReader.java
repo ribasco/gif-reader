@@ -612,7 +612,7 @@ public final class GifImageReader implements AutoCloseable {
      */
     private void readLogicalScreenDescriptor(final ImageInputStream is, final GifMetaData image, BlockFilter skip) throws IOException {
         lastLogicalScreenDescriptorOffset = is.getStreamPosition();
-        if (skip.filter(Block.LOGICAL_SCREEN_DESCRIPTOR)) {
+        if (skip.filter(Block.LOGICAL_SCREEN_DESCRIPTOR, lastLogicalScreenDescriptorOffset, is)) {
             is.skipBytes(LENGTH_LOGICAL_SCREEN_DESC);
             return;
         }
@@ -699,9 +699,9 @@ public final class GifImageReader implements AutoCloseable {
      *
      * @return The {@link GifFrame} instance or null if not available
      */
-    private GifFrame getOrInitializeFrame(GifMetaData image, BlockFilter skip) {
+    private GifFrame getOrInitializeFrame(GifMetaData image, BlockFilter skip) throws IOException {
         GifFrame frame = null;
-        if (!skip.filter(Block.INITIALIZE)) {
+        if (!skip.filter(Block.INITIALIZE, is.getStreamPosition(), is)) {
             frame = getCurrentFrame();
             if (frame == null)
                 frame = beginImageFrame(image);
@@ -843,7 +843,7 @@ public final class GifImageReader implements AutoCloseable {
      * @apiNote Required Version.  87a.
      */
     private void readImageDataBlocks(ImageInputStream is, GifFrame frame, BlockFilter skip) throws IOException {
-        if (skip.filter(Block.IMAGE_DATA)) {
+        if (skip.filter(Block.IMAGE_DATA, is.getStreamPosition(), is)) {
             //Read image data
             is.skipBytes(1); //image size
             skipDataBlocks(is); //skip image datta
@@ -1170,7 +1170,7 @@ public final class GifImageReader implements AutoCloseable {
      * </ol>
      */
     private void readGraphicsControlExtensionBlock(ImageInputStream is, GifFrame frame, BlockFilter skip) throws IOException {
-        if (skip.filter(ExtensionBlock.GRAPHICS, is.getStreamPosition())) {
+        if (skip.filter(ExtensionBlock.GRAPHICS, is.getStreamPosition(), is)) {
             is.skipBytes(LENGTH_GRAPHIC_BLOCK + LENGTH_BLOCK_SIZE + LENGTH_TERIMINATOR); //+2 to include the size and terminator blocks
             return;
         }
@@ -1264,7 +1264,7 @@ public final class GifImageReader implements AutoCloseable {
         long startPos = is.getStreamPosition();
 
         //Skip local color table
-        if (filter.filter(Block.LOCAL_COLOR_TABLE)) {
+        if (filter.filter(Block.LOCAL_COLOR_TABLE, startPos, is)) {
             //since we know that a local color table is preceded with an image descriptor block,
             // we will need to extract the previous bytes to get some information pertaining to the local color table
             if (lastImageDescriptorOffset <= 0)
