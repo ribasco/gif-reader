@@ -63,7 +63,7 @@ public class GifMetaData {
 
     int loopCount = 0;
 
-    int totalFrames;
+    int totalFrames = -1;
 
     /**
      * @return The total number of frames found in this data stream

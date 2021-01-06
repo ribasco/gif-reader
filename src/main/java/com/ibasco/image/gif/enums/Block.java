@@ -41,9 +41,9 @@ public enum Block implements BlockIdentifier {
 
     GLOBAL_COLOR_TABLE(0x3E, "Local Color Table"), //non-official spec
 
-    IMAGE_DATA(0x3F, "Image Data"), //non-official spec
+    IMAGE_DATA(0x3F, "Image Data"), //non-official spec (the entire image block, code size + encoded image frame data)
 
-    IMAGE_DATA_BLOCK(0x41, "Image Data Block"), //non-official spec
+    IMAGE_DATA_BLOCK(0x41, "Image Data Block"), //non-official spec (just the encoded image frame data)
 
     INITIALIZE(0x40, "Initialize"); //non-official spec
 

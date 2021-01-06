@@ -91,7 +91,7 @@ All images used in this test can be found at the [samples](https://github.com/ri
 
 **GifReader Test (GifReaderDemo.java)**
 
-Note: A buffer overflow warning is shown below to indicate that the output data was trimmed by the decoder.
+Note: A buffer overflow warning was shown below to indicate that the output data for the current frame was trimmed by the decoder instead of throwing an error. 
 
 ```text
 ====================================================
