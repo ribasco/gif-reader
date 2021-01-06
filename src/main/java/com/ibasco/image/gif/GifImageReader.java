@@ -17,11 +17,11 @@
 package com.ibasco.image.gif;
 
 import com.ibasco.image.gif.enums.Block;
-import com.ibasco.image.gif.enums.BlockIdentifier;
 import com.ibasco.image.gif.enums.DisposalMethod;
 import com.ibasco.image.gif.enums.ExtensionBlock;
 import com.ibasco.image.gif.exceptions.InvalidSignatureException;
 import com.ibasco.image.gif.exceptions.UnsupportedBlockException;
+import com.ibasco.image.gif.util.BlockFilter;
 import com.ibasco.image.gif.util.ImageOps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,7 +67,6 @@ import java.util.function.BiConsumer;
  * @author Rafael Luis Ibasco
  * @see <a href="https://www.w3.org/Graphics/GIF/spec-gif89a.txt">GIF89a Specification</a>
  */
-@SuppressWarnings("DuplicatedCode")
 public final class GifImageReader implements AutoCloseable {
 
     //A simple filter that tells the processor to not skip the data blocks
@@ -111,17 +110,17 @@ public final class GifImageReader implements AutoCloseable {
     /**
      * A fixed sequence of bytes representing the GIF header signature
      */
-    private static final byte[] HEADER_SIGNATURE = new byte[] {0x47, 0x49, 0x46};
+    protected static final byte[] HEADER_SIGNATURE = new byte[] {0x47, 0x49, 0x46};
 
     /**
      * A fixed sequence of bytes representing the 87a version of the GIF specification
      */
-    private static final byte[] HEADER_VERSION_87A = new byte[] {0x38, 0x37, 0x61};
+    protected static final byte[] HEADER_VERSION_87A = new byte[] {0x38, 0x37, 0x61};
 
     /**
      * A fixed sequence of bytes representing the 89a version of the GIF specification
      */
-    private static final byte[] HEADER_VERSION_89A = new byte[] {0x38, 0x39, 0x61};
+    protected static final byte[] HEADER_VERSION_89A = new byte[] {0x38, 0x39, 0x61};
 
     //Default byte order to use
     private static final ByteOrder BYTE_ORDER = ByteOrder.LITTLE_ENDIAN;
@@ -325,61 +324,8 @@ public final class GifImageReader implements AutoCloseable {
             final int r = Byte.toUnsignedInt(is.readByte()); //red
             final int g = Byte.toUnsignedInt(is.readByte()); //green
             final int b = Byte.toUnsignedInt(is.readByte()); //blue
-            colors[index] = toArgb(r, g, b);
+            colors[index] = ImageOps.toArgb(r, g, b);
         }
-    }
-
-    /**
-     * Converts the individual R-G-B values to a single signed integer value in ARGB format.
-     * Alpha/Opacity value is applied at 255 (Opaque) by default.
-     *
-     * @param red
-     *         The red component value (0 - 255)
-     * @param green
-     *         The green component value (0 - 255)
-     * @param blue
-     *         The blue component value (0 - 255)
-     *
-     * @return A signed 32-bit ARGB value
-     */
-    private static int toArgb(int red, int green, int blue) {
-        return toArgb(red, green, blue, 255);
-    }
-
-    /**
-     * Converts the individual R-G-B values to a single signed integer value in ARGB format.
-     * Alpha/Opacity value is applied at 255 (Opaque) by default.
-     *
-     * @param red
-     *         The red component value (0 - 255)
-     * @param green
-     *         The green component value (0 - 255)
-     * @param blue
-     *         The blue component value (0 - 255)
-     * @param alpha
-     *         The alpha component value (0 - 255)
-     *
-     * @return A signed 32-bit ARGB value
-     */
-    public static int toArgb(int red, int green, int blue, int alpha) {
-        return ((alpha & 0xff) << 24) | ((red & 0xff) << 16) | ((green & 0xff) << 8) | (blue & 0xff);
-    }
-
-    /**
-     * Breaks down a 32-bit ARGB integer into a 4-byte array contianing ARGB color channels
-     *
-     * @param argb
-     *         The 32-bit ARGB integer to convert
-     *
-     * @return A 4-byte array containing the ARGB colors. Color values range from 0 to 255.
-     */
-    public static int[] fromArgb(int argb) {
-        int[] ar = new int[4];
-        ar[0] = (argb >> 24) & 0xff; //alpha
-        ar[1] = (argb >> 16) & 0xff; //red
-        ar[2] = (argb >> 8) & 0xff; //green
-        ar[3] = argb & 0xff; //blue
-        return ar;
     }
 
     /**
@@ -1490,15 +1436,5 @@ public final class GifImageReader implements AutoCloseable {
         this.frameIndex = 0;
     }
 
-    /**
-     * Interface for on-the-fly filtering of sub/data-blocks during image processing
-     *
-     * @author Rafael Luis Ibasco
-     */
-    @FunctionalInterface
-    public interface BlockFilter {
-
-        boolean filter(BlockIdentifier block, Object... data);
-    }
     //</editor-fold>
 }

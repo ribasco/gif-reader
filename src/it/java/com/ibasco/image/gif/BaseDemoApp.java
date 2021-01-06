@@ -29,8 +29,6 @@ import java.util.Objects;
 
 abstract public class BaseDemoApp {
 
-    private static final Logger log = LoggerFactory.getLogger(BaseDemoApp.class);
-
     public static final String ANSI_RESET = "\u001B[0m";
 
     public static final String ANSI_BLACK = "\u001B[30m";
@@ -85,10 +83,10 @@ abstract public class BaseDemoApp {
                 total = reader.getTotalFrames();
             }
             long readDuration = System.nanoTime() - readStart;
-            log.info("FILE: {} FRAMES: {} DURATION: {}ms", String.format("%-69s", file.getName()), total, Duration.ofNanos(readDuration).toMillis());
+            logn("FILE: %s FRAMES: %d DURATION: %dms", String.format("%-69s", file.getName()), total, Duration.ofNanos(readDuration).toMillis());
         }
         long scanDuration = System.nanoTime() - scanStart;
-        log.info("Scan ended in {}ms", Duration.ofNanos(scanDuration).toMillis());
+        logn("Scan ended in %dms", Duration.ofNanos(scanDuration).toMillis());
     }
 
     protected void updateFrameCount() {
@@ -101,9 +99,9 @@ abstract public class BaseDemoApp {
     }
 
     private void printHeader(String text) {
-        log.info(colorize("=".repeat(104), ANSI_CYAN));
-        log.info("{} - {}", colorize(text.toUpperCase(), ANSI_CYAN), colorize(getClass().getSimpleName(), ANSI_BLUE));
-        log.info(colorize("=".repeat(104), ANSI_CYAN));
+        logn(colorize("=".repeat(104), ANSI_CYAN));
+        logn("%s - %s", colorize(text.toUpperCase(), ANSI_CYAN), colorize(getClass().getSimpleName(), ANSI_BLUE));
+        logn(colorize("=".repeat(104), ANSI_CYAN));
     }
 
     protected void runDemo() throws Exception {
@@ -131,8 +129,8 @@ abstract public class BaseDemoApp {
                     if (status != null) {
                         statusList.add(status);
                         String fileName = String.format("%-20s", file.getName());
-                        log.info("{} {}", field("FILE", fileName), field("STATUS", status.error == null ? colorize("PASS", ANSI_GREEN) : colorize("FAIL", ANSI_RED)));
-                        //log.info("File: {} Status: {}", fileName, status.error == null ? colorize("PASS", ANSI_GREEN) : colorize("FAIL", ANSI_RED));
+                        logn("%s %s", field("FILE", fileName), field("STATUS", status.error == null ? colorize("PASS", ANSI_GREEN) : colorize("FAIL", ANSI_RED)));
+                        //logn("File: {} Status: {}", fileName, status.error == null ? colorize("PASS", ANSI_GREEN) : colorize("FAIL", ANSI_RED));
                     }
                     totalImages++;
                 }
@@ -141,27 +139,27 @@ abstract public class BaseDemoApp {
                 printHeader("SUMMARY");
                 this.fileNameMaxLength = getMaxLength(statusList);
                 for (var status : statusList) {
-                    log.info(status.toString());
+                    logn(status.toString());
                 }
             }
 
             printHeader("END");
         } finally {
             long intervalNanos = System.nanoTime() - startNanos;
-            log.info("Processed a total of {} frames from {} images (Took {} ms, Last File: {})", totalFrames, totalImages, Duration.ofNanos(intervalNanos).toMillis(), (lastFileProcessed != null) ? lastFileProcessed.getName() : "N/A");
+            logcn("Processed a total of %d frames from %d images (Took %d ms, Last File: %s)", ANSI_WHITE, totalFrames, totalImages, Duration.ofNanos(intervalNanos).toMillis(), (lastFileProcessed != null) ? lastFileProcessed.getName() : "N/A");
         }
     }
 
-    protected static String colorize(String text, String color) {
-        return String.format("%s%s%s", color, text, ANSI_RESET);
+    protected static void logcn(String msg, String color, Object... params) {
+        System.out.printf(color + (msg) + "%n" + ANSI_RESET, params);
     }
 
     protected static void logn(String msg, Object... params) {
         System.out.printf((msg) + "%n", params);
     }
 
-    protected int getMaxLength(List<Status> statusList) {
-        return statusList.stream().map(Status::getFile).map(File::getName).map(String::length).max(Integer::compare).orElse(20);
+    protected static String colorize(String text, String color) {
+        return String.format("%s%s%s", color, text, ANSI_RESET);
     }
 
     private String field(String field, String value) {
@@ -170,6 +168,10 @@ abstract public class BaseDemoApp {
 
     private String field(String field, String value, int padding) {
         return String.format(ANSI_BLUE + "[%s]: " + ANSI_WHITE + "%-" + padding + "s" + ANSI_RESET, field, value);
+    }
+
+    protected int getMaxLength(List<Status> statusList) {
+        return statusList.stream().map(Status::getFile).map(File::getName).map(String::length).max(Integer::compare).orElse(20);
     }
 
     abstract protected void readFile(File file) throws Exception;

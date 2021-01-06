@@ -25,6 +25,59 @@ import com.ibasco.image.gif.GifFrame;
  */
 public final class ImageOps {
 
+    /**
+     * Converts the individual R-G-B values to a single signed integer value in ARGB format.
+     * Alpha/Opacity value is applied at 255 (Opaque) by default.
+     *
+     * @param red
+     *         The red component value (0 - 255)
+     * @param green
+     *         The green component value (0 - 255)
+     * @param blue
+     *         The blue component value (0 - 255)
+     *
+     * @return A signed 32-bit ARGB value
+     */
+    public static int toArgb(int red, int green, int blue) {
+        return toArgb(red, green, blue, 255);
+    }
+
+    /**
+     * Converts the individual R-G-B values to a single signed integer value in ARGB format.
+     * Alpha/Opacity value is applied at 255 (Opaque) by default.
+     *
+     * @param red
+     *         The red component value (0 - 255)
+     * @param green
+     *         The green component value (0 - 255)
+     * @param blue
+     *         The blue component value (0 - 255)
+     * @param alpha
+     *         The alpha component value (0 - 255)
+     *
+     * @return A signed 32-bit ARGB value
+     */
+    public static int toArgb(int red, int green, int blue, int alpha) {
+        return ((alpha & 0xff) << 24) | ((red & 0xff) << 16) | ((green & 0xff) << 8) | (blue & 0xff);
+    }
+
+    /**
+     * Breaks down a 32-bit ARGB integer into a 4-byte array contianing ARGB color channels
+     *
+     * @param argb
+     *         The 32-bit ARGB integer to convert
+     *
+     * @return A 4-byte array containing the ARGB colors. Color values range from 0 to 255.
+     */
+    public static int[] fromArgb(int argb) {
+        int[] ar = new int[4];
+        ar[0] = (argb >> 24) & 0xff; //alpha
+        ar[1] = (argb >> 16) & 0xff; //red
+        ar[2] = (argb >> 8) & 0xff; //green
+        ar[3] = argb & 0xff; //blue
+        return ar;
+    }
+
     //borrowed from Dhyan Blum's GifDecoder implementation
     public static int[] deinterlace(final GifFrame frame) {
         final int[] src = frame.getData();
