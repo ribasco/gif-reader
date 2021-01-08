@@ -28,15 +28,13 @@ import org.slf4j.LoggerFactory;
 
 import javax.imageio.ImageIO;
 import javax.imageio.stream.ImageInputStream;
-import java.io.EOFException;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 /**
  * A pure java implementation of the GIF89a Specification
@@ -64,14 +62,29 @@ import java.util.function.BiConsumer;
  * }
  * </pre>
  *
+ * <p><strong>Example 03: </strong></p>
+ * <pre>
+ *  //Passing true as a second argument on the constructor will let the reader render each frame to it's final form. This happens on-the-fly as you call {@link #read()}
+ *
+ *  var file = new File("/home/user/example.gif");
+ *  try (var reader = new GifImageReader(file, true)) {
+ *      while (reader.hasRemaining()) {
+ *          GifFrame frame = reader.read();
+ *          System.out.printf("Index: %d, Frame: %d x %d", frame.getIndex(), frame.getWidth(), frame.getHeight());
+ *      }
+ *  }
+ *
+ * </pre>
+ *
  * @author Rafael Luis Ibasco
  * @see <a href="https://www.w3.org/Graphics/GIF/spec-gif89a.txt">GIF89a Specification</a>
  */
-public final class GifImageReader implements AutoCloseable {
+public final class GifImageReader implements Closeable {
 
-    //A simple filter that tells the processor to not skip the data blocks
+    //A filter that tells the reader to process all blocks it encounters
     public static final BlockFilter DO_NOT_SKIP = (ident, data) -> false;
 
+    //A filter that tells the reader to skip all the blocks it encounters
     public static final BlockFilter SKIP_ALL = (ident, data) -> true;
 
     /*
@@ -104,7 +117,6 @@ public final class GifImageReader implements AutoCloseable {
      */
 
     //<editor-fold desc="Constants">
-
     private static final Logger log = LoggerFactory.getLogger(GifImageReader.class);
 
     /**
@@ -151,10 +163,10 @@ public final class GifImageReader implements AutoCloseable {
 
     //number of bytes for the logical screen descriptor
     private static final int LENGTH_LOGICAL_SCREEN_DESC = 7;
+    //</editor-fold>
 
     //<editor-fold desc="Private Members">
     private final ImageInputStream is;
-    //</editor-fold>
 
     private GifMetaData metadata;
 
@@ -168,74 +180,90 @@ public final class GifImageReader implements AutoCloseable {
 
     private boolean initialized;
 
+    private FrameRenderer frameRenderer;
+
     //take note of the last image descriptor offset that was processed,
     private long lastImageDescriptorOffset;
 
     private long lastLogicalScreenDescriptorOffset;
 
     private BlockFilter filter = DO_NOT_SKIP;
+    //</editor-fold>
 
     /**
-     * Creates a new reader instance based on the source image {@link File} provided.
+     * Creates a new reader instance.
      *
      * @param imageFile
      *         The source image file
      *
      * @throws IOException
      *         When an I/O error occurs
-     * @see #GifImageReader(ImageInputStream)
+     * @see #GifImageReader(ImageInputStream, boolean)
      */
     public GifImageReader(File imageFile) throws IOException {
-        this(ImageIO.createImageInputStream(imageFile));
+        this(ImageIO.createImageInputStream(imageFile), false);
     }
-    //</editor-fold>
 
     /**
-     * Creates a new reader instance based on the {@link InputStream} provided.
+     * Creates a new reader instance.
      *
-     * @param is
-     *         The source {@link InputStream}
+     * @param imageFile
+     *         The source image file
+     * @param renderActualFrame
+     *         {@code True} if the reader should render each frame to it's actual form. Otherwise the raw untransformed image will be returned instead.
      *
      * @throws IOException
      *         When an I/O error occurs
-     * @see #GifImageReader(ImageInputStream)
+     */
+    public GifImageReader(File imageFile, boolean renderActualFrame) throws IOException {
+        this(ImageIO.createImageInputStream(imageFile), renderActualFrame);
+    }
+
+    /**
+     * Creates a new reader instance.
+     *
+     * @param is
+     *         The source {@link InputStream} containing the GIF image data to be read and processed.
+     *
+     * @throws IOException
+     *         When an I/O error occurs
      */
     public GifImageReader(InputStream is) throws IOException {
-        this(ImageIO.createImageInputStream(is));
+        this(is, false);
+    }
+
+    /**
+     * Creates a new reader instance
+     *
+     * @param is
+     *         The source {@link InputStream} containing the GIF image data to be read and processed
+     * @param renderActualFrame
+     *         {@code True} if the reader should render each frame to it's actual form. Otherwise the raw untransformed image will be returned instead.
+     *
+     * @throws IOException
+     *         When an I/O error occurs
+     * @see #GifImageReader(ImageInputStream, boolean)
+     */
+    public GifImageReader(InputStream is, boolean renderActualFrame) throws IOException {
+        this(ImageIO.createImageInputStream(is), renderActualFrame);
     }
 
     /**
      * <p>
-     * Creates a new reader instance based on the {@link ImageInputStream} provided. To start processing the image frames, please use {@link #read()} method.
+     * Creates a new reader instance. To start processing the image frames, please use {@link #read()} method.
      * </p>
      *
      * @param is
-     *         The {@link ImageInputStream} contianing the GIF image data to be read and processed
+     *         The {@link ImageInputStream} containing the GIF image data to be read and processed
      *
      * @throws IOException
      *         When an I/O error occurs
      */
-    public GifImageReader(ImageInputStream is) throws IOException {
+    public GifImageReader(ImageInputStream is, boolean renderActualFrame) throws IOException {
         this.is = is;
         this.metadata = initializeImage(is);
-    }
-
-    private static boolean readGlobalColorTableFlag(byte packedByte) {
-        return (packedByte & 0b10000000) >>> 7 == 1;
-    }
-
-    private static int readGlobalColorTableSize(byte packedByte) {
-        final int globColTblSizePower = (packedByte & 7) + 1; // Bits 0-2
-        return 1 << globColTblSizePower;
-    }
-
-    private static boolean readLocalColorTableFlag(byte packedByte) {
-        return ((packedByte & 0b10000000) >>> 7) == 1;
-    }
-
-    private static int readLocalColorTableSize(byte packedByte) {
-        final int localColorTablePower = (packedByte & 0b00000111) + 1;
-        return 1 << localColorTablePower; //2 ^ (N + 1) as per spec
+        if (renderActualFrame)
+            this.frameRenderer = new FrameRenderer();
     }
 
     /**
@@ -391,7 +419,7 @@ public final class GifImageReader implements AutoCloseable {
      *
      * @return {@code true} if there are more blocks available to be processed, {@code false} if there are no more blocks available or we have reached either {@link Block#TRAILER} or end-of-file.
      *
-     * @apiNote  Calling this method does not guarantee that the next read operation will be successful.
+     * @apiNote Calling this method does not guarantee that the next read operation will be successful.
      * It simply checks if the next byte is a valid block identifier.
      */
     public boolean hasRemaining() {
@@ -717,8 +745,6 @@ public final class GifImageReader implements AutoCloseable {
         }
     }
 
-    //<editor-fold desc="Utility Methods">
-
     /**
      * Reads and processes a single supported extension blocks from the current data stream
      *
@@ -833,6 +859,12 @@ public final class GifImageReader implements AutoCloseable {
             //If interlace flag is set,
             if (frame.isInterlaced())
                 frame.data = ImageOps.deinterlace(frame);
+
+            //render frame image if
+            // disposal is enabled
+            if (frameRenderer != null) {
+                frameRenderer.process(frame);
+            }
         } else {
             log.debug("{}) Image data blocks were skipped. Decoding and/or deinterlacing will not take placee", frame.index);
             frame.skipped = true;
@@ -1291,6 +1323,35 @@ public final class GifImageReader implements AutoCloseable {
         readColorTable(is, image.globalColorTable);
     }
 
+    @Override
+    public void close() throws IOException {
+        if (!closed && this.is != null) {
+            this.is.close();
+            reset();
+            closed = true;
+            log.debug("Successfully closed the underlying image input stream");
+        }
+    }
+
+    //<editor-fold desc="Utility Methods">
+    private static boolean readGlobalColorTableFlag(byte packedByte) {
+        return (packedByte & 0b10000000) >>> 7 == 1;
+    }
+
+    private static int readGlobalColorTableSize(byte packedByte) {
+        final int globColTblSizePower = (packedByte & 7) + 1; // Bits 0-2
+        return 1 << globColTblSizePower;
+    }
+
+    private static boolean readLocalColorTableFlag(byte packedByte) {
+        return ((packedByte & 0b10000000) >>> 7) == 1;
+    }
+
+    private static int readLocalColorTableSize(byte packedByte) {
+        final int localColorTablePower = (packedByte & 0b00000111) + 1;
+        return 1 << localColorTablePower; //2 ^ (N + 1) as per spec
+    }
+
     /**
      * Marks the start of the processing of a new {@link GifFrame}
      *
@@ -1419,22 +1480,107 @@ public final class GifImageReader implements AutoCloseable {
         return totalSize;
     }
 
-    @Override
-    public void close() throws IOException {
-        if (!closed && this.is != null) {
-            this.is.close();
-            reset();
-            closed = true;
-            log.debug("Successfully closed the underlying image input stream");
-        }
-    }
-
     private void reset() {
         this.lastFrame = null;
         this.currentFrame = null;
         this.metadata = null;
         this.frameIndex = 0;
+        if (this.frameRenderer != null)
+            this.frameRenderer.reset();
     }
-
     //</editor-fold>
+
+    private static class FrameRenderer {
+
+        private GifFrame lastUndisposedFrame;
+
+        private GifFrame firstFrame;
+
+        private int[] previous;
+
+        private int logicalScreenWidth;
+
+        private int logicalScreenHeight;
+
+        public void process(GifFrame frame) {
+            if (firstFrame == null)
+                initialize(frame);
+
+            assert firstFrame != null;
+
+            //copy current frame data to previous image buffer
+            copy(frame, logicalScreenWidth, logicalScreenHeight, previous, ImageOps::alphaBlend);
+
+            //update the frame data with the newly rendered frame image
+            frame.data = new int[previous.length];
+            System.arraycopy(previous, 0, frame.data, 0, previous.length);
+
+            //dispose previous frame
+            dispose(frame);
+
+            //update frame parameters
+            frame.width = logicalScreenWidth;
+            frame.height = logicalScreenHeight;
+            frame.rendered = true;
+        }
+
+        private void initialize(GifFrame frame) {
+            firstFrame = frame;
+            lastUndisposedFrame = null;
+            logicalScreenWidth = frame.getMetadata().getWidth();
+            logicalScreenHeight = frame.getMetadata().getHeight();
+            assert logicalScreenWidth > 0 && logicalScreenHeight > 0;
+            //initialize with the logical screen width and height
+            previous = new int[logicalScreenWidth * logicalScreenHeight];
+        }
+
+        private void reset() {
+            this.firstFrame = null;
+            this.lastUndisposedFrame = null;
+        }
+
+        private void dispose(GifFrame frame) {
+            int logicalScreenWidth = frame.getMetadata().getWidth();
+            int logicalScreenHeight = frame.getMetadata().getHeight();
+
+            var disposalMethod = frame.getDisposalMethod();
+            //The disposal method gives instructions on what to do with the previous
+            //frame once a new frame is displayed.
+            switch (disposalMethod) {
+                //The background color or background tile shows
+                //through the transparent pixels of the new frame
+                // (replacing the image areas of the previous frame).
+                case RESTORE_TO_BACKGROUND: {
+                    //clear previous frame with the dimensions of the current
+                    ImageOps.clear(frame.getLeftPos(), frame.getTopPos(), frame.getWidth(), frame.getHeight(), logicalScreenWidth, previous);
+                    break;
+                }
+                //This option restores to the state of the previous, undisposed frame.
+                // This method is not well supported and is best avoided.
+                case RESTORE_TO_PREVIOUS: {
+                    //restore to the last undisposed frame. If none available, restore to previous frame.
+                    var restoreToFrame = lastUndisposedFrame == null ? firstFrame : lastUndisposedFrame;
+                    assert restoreToFrame != null;
+                    //clear entire image surface
+                    ImageOps.clear(previous);
+                    //copy the last undisposeed frame to the previous image surface
+                    copy(restoreToFrame, logicalScreenWidth, logicalScreenHeight, previous, ImageOps::sourceBlend);
+                    break;
+                }
+                //DO NOT DISPOSE: (leave as is) With this option any pixels not covered by
+                //the next frame continue to display. Use this method if you are using
+                //transparency within frames.
+                //
+                //NONE: replace one full-size, non-transparent frame with another.
+                default: {
+                    lastUndisposedFrame = frame;
+                    break;
+                }
+            }
+        }
+
+        private void copy(GifFrame frame, int dstWidth, int dstHeight, int[] dst, BiFunction<Integer, Integer, Integer> blender) {
+            ImageOps.copy(frame.getWidth(), frame.getHeight(), frame.getData(), frame.getLeftPos(), frame.getTopPos(), dstWidth, dstHeight, dst, blender);
+        }
+    }
 }

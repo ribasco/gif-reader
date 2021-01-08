@@ -17,6 +17,8 @@
 package com.ibasco.image.gif;
 
 import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,10 +33,19 @@ public class GifImageReaderIT {
 
     private static final Logger log = LoggerFactory.getLogger(GifImageReaderIT.class);
 
+    private static final Path samplesPath = Path.of(System.getProperty("user.dir"), "samples");
+
+    private static File[] samples;
+
+    @BeforeAll
+    static void beforeAll() {
+        samples = scanFilesFromPath(samplesPath);
+    }
+
     @Test
-    void testReadSamples() throws IOException {
-        var samplesPath = Path.of(System.getProperty("user.dir"), "samples");
-        File[] samples = scanFilesFromPath(samplesPath);
+    @DisplayName("Read unprocessed samples")
+    void testReadSamplesUnprocessed() throws IOException {
+        log.info("Testing unprocessed frames");
         for (var file : samples) {
             log.info("Running test for file: {}", file.getName());
             try (var reader = assertDoesNotThrow(() -> new GifImageReader(file))) {
@@ -48,6 +59,7 @@ public class GifImageReaderIT {
                 while (reader.hasRemaining()) {
                     var frame = reader.read();
                     assertNotNull(frame);
+                    assertFalse(frame.isRendered());
                     count++;
                 }
                 assertEquals(reader.getTotalFrames(), count);
@@ -55,7 +67,37 @@ public class GifImageReaderIT {
         }
     }
 
-    protected File[] scanFilesFromPath(Path path) {
+    @Test
+    @DisplayName("Read processed samples")
+    void testReadSamplesProcessed() throws IOException {
+        log.info("Testing processed frames");
+        for (var file : samples) {
+            log.info("Running test for file: {}", file.getName());
+            try (var reader = assertDoesNotThrow(() -> new GifImageReader(file, true))) {
+                var metadata = reader.getMetadata();
+                int logicalScreenWidth = metadata.getWidth();
+                int logicalScreenHeight = metadata.getHeight();
+
+                assertEquals(reader.getTotalFrames(), reader.getMetadata().getTotalFrames());
+                assertTrue(reader.getTotalFrames() > 0);
+                assertNotNull(metadata);
+                assertTrue(reader.hasRemaining());
+
+                int count = 0;
+                while (reader.hasRemaining()) {
+                    var frame = reader.read();
+                    assertNotNull(frame);
+                    assertTrue(frame.isRendered());
+                    assertEquals(logicalScreenWidth, frame.getWidth());
+                    assertEquals(logicalScreenHeight, frame.getHeight());
+                    count++;
+                }
+                assertEquals(reader.getTotalFrames(), count);
+            }
+        }
+    }
+
+    private static File[] scanFilesFromPath(Path path) {
         final var directoryFile = path.toFile();
         return Arrays.stream(Objects.requireNonNull(directoryFile.list((dir1, name) -> name.toLowerCase().endsWith(".gif"))))
                      .map(s -> Path.of(directoryFile.getAbsolutePath(), s))

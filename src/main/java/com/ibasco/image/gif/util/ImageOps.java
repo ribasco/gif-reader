@@ -18,6 +18,9 @@ package com.ibasco.image.gif.util;
 
 import com.ibasco.image.gif.GifFrame;
 
+import java.util.Arrays;
+import java.util.function.BiFunction;
+
 /**
  * Utility methods for GIF related operations
  *
@@ -76,6 +79,77 @@ public final class ImageOps {
         ar[2] = (argb >> 8) & 0xff; //green
         ar[3] = argb & 0xff; //blue
         return ar;
+    }
+
+    public static void clear(int[] data) {
+        Arrays.fill(data, 0);
+    }
+
+    public static void clear(int x, int y, int width, int height, int stride, int[] data) {
+        //copy current frame data to previous image buffer
+        for (int dstY = 0; dstY < height; dstY++) {
+            for (int dstX = 0; dstX < width; dstX++) {
+                int x0 = dstX + x;
+                int y0 = dstY + y;
+                data[x0 + y0 * stride] = 0;
+            }
+        }
+    }
+
+    public static void copy(int srcWidth, int srceHeight, int[] src, int dstX, int dstY, int dstWidth, int dstHeight, int[] dst) {
+        copy(srcWidth, srceHeight, src, dstX, dstY, dstWidth, dstHeight, dst, null);
+    }
+
+    public static void copy(int srcWidth, int srceHeight, int[] src, int dstX, int dstY, int dstWidth, int dstHeight, int[] dst, BiFunction<Integer, Integer, Integer> blender) {
+        //copy current frame data to previous image buffer
+        for (int srcY = 0; srcY < srceHeight; srcY++) {
+            for (int srcX = 0; srcX < srcWidth; srcX++) {
+                int srcIndex = srcX + srcY * srcWidth;
+                int srcColor = src[srcIndex];
+                int dX = dstX + srcX;
+                int dY = dstY + srcY;
+                int dstIndex = dX + dY * dstWidth;
+                if ((dX > (dstWidth - 1)) || (dY > (dstHeight - 1)))
+                    continue;
+                int dstColor = dst[dstIndex];
+                dst[dstIndex] = blender == null ? alphaBlend(srcColor, dstColor) : blender.apply(srcColor, dstColor);
+            }
+        }
+    }
+
+    public static int sourceBlend(int source, int desc) {
+        return source;
+    }
+
+    public static int alphaBlend(int source, int dest) {
+        //C = A(alpha / 255) + B(1 - (alpha / 255))
+        // a = alpha component
+        // A = source (fg)
+        // B = dest (bg)
+        // C = final output
+
+        //break down each color into their respective
+        // 4-channeel values (Alpha, Red, Gree, Blue)
+
+        //source components
+        int srcA = (source >> 24) & 0xff; //alpha
+        int srcR = (source >> 16) & 0xff; //red
+        int srcG = (source >> 8) & 0xff; //green
+        int srcB = source & 0xff; //blue
+
+        //dest components
+        int dstA = (dest >> 24) & 0xff; //alpha
+        int dstR = (dest >> 16) & 0xff; //red
+        int dstG = (dest >> 8) & 0xff; //green
+        int dstB = dest & 0xff; //blue
+
+        float ratio = (float) srcA / 255f; //use the alpha component of source (foreground)
+        int outA = (int) ((srcA * ratio) + (dstA * (1 - ratio)));
+        int outR = (int) ((srcR * ratio) + (dstR * (1 - ratio)));
+        int outG = (int) ((srcG * ratio) + (dstG * (1 - ratio)));
+        int outB = (int) ((srcB * ratio) + (dstB * (1 - ratio)));
+
+        return ((outA & 0xff) << 24) | ((outR & 0xff) << 16) | ((outG & 0xff) << 8) | (outB & 0xff);
     }
 
     //borrowed from Dhyan Blum's GifDecoder implementation

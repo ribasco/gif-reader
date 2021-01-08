@@ -27,6 +27,8 @@ public class GifFrame {
 
     final GifMetaData metadata;
 
+    boolean rendered;
+
     int[] data;
 
     DisposalMethod disposalMethod;
@@ -342,5 +344,12 @@ public class GifFrame {
      */
     public int[] getData() {
         return data;
+    }
+
+    /**
+     * @return {@code True} if the frame has been rendered to it's actual form
+     */
+    public boolean isRendered() {
+        return rendered;
     }
 }

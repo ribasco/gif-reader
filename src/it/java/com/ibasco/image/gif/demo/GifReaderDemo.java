@@ -29,7 +29,7 @@ public class GifReaderDemo extends BaseDemoApp {
 
     @Override
     protected void readFile(File file) throws IOException {
-        try (var reader = new GifImageReader(file)) {
+        try (var reader = new GifImageReader(file, true)) {
             //var metadata = reader.getMetadata();
             while (reader.hasRemaining()) {
                 var frame = reader.read();
