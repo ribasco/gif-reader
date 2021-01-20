@@ -283,6 +283,12 @@ public class GifDecoder implements Closeable {
         return newTableEntry;
     }
 
+    /**
+     * Translate the provided code value and store it to the output image buffer
+     *
+     * @param code
+     *         The code value that will be used as a lookup key in the code table
+     */
     private void outputToImage(int code) {
         outputToImage(getCodeValue(code));
     }
@@ -319,7 +325,7 @@ public class GifDecoder implements Closeable {
      */
     private int[] getCodeValue(int code) {
         if (code < 0 || code > codeTable.length) {
-            throw new IllegalArgumentException(String.format("Invalid code number: %d (Code Size: %d)", code, codeReader.getCodeSize()));
+            throw new IllegalArgumentException(String.format("Invalid code number: %d (Code Size: %d, Code Table Size: %d)", code, codeReader.getCodeSize(), codeTable.length));
         }
         return codeTable[code];
     }

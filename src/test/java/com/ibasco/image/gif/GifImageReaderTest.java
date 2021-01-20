@@ -16,6 +16,7 @@
 
 package com.ibasco.image.gif;
 
+import com.ibasco.image.gif.enums.DisposalMethod;
 import com.ibasco.image.gif.test.BaseTest;
 import org.junit.jupiter.api.AfterEach;
 import static org.junit.jupiter.api.Assertions.*;
@@ -27,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
+import java.io.IOException;
 
 class GifImageReaderTest extends BaseTest {
 
@@ -94,6 +96,18 @@ class GifImageReaderTest extends BaseTest {
         assertEquals(0, frame.getIndex());
         assertNotNull(frame.getData());
         assertEquals(frame.getWidth() * frame.getHeight(), frame.getData().length);
+    }
+
+    @Test
+    @DisplayName("Test disposal method override")
+    void testDisposalOverride() throws IOException {
+        is.reset();
+        try (var reader = assertDoesNotThrow(() -> new GifImageReader(is, true))) {
+            assertTrue(reader.hasRemaining());
+            reader.setDisposalOverride(DisposalMethod.RESTORE_TO_PREVIOUS);
+            var frame = assertDoesNotThrow(reader::read);
+            assertEquals(DisposalMethod.RESTORE_TO_PREVIOUS, frame.getDisposalMethod());
+        }
     }
 
     @Test

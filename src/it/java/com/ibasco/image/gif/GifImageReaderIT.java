@@ -39,7 +39,7 @@ public class GifImageReaderIT {
 
     @BeforeAll
     static void beforeAll() {
-        samples = scanFilesFromPath(samplesPath);
+        samples = scanFilesFromPath();
     }
 
     @Test
@@ -97,8 +97,8 @@ public class GifImageReaderIT {
         }
     }
 
-    private static File[] scanFilesFromPath(Path path) {
-        final var directoryFile = path.toFile();
+    private static File[] scanFilesFromPath() {
+        final var directoryFile = GifImageReaderIT.samplesPath.toFile();
         return Arrays.stream(Objects.requireNonNull(directoryFile.list((dir1, name) -> name.toLowerCase().endsWith(".gif"))))
                      .map(s -> Path.of(directoryFile.getAbsolutePath(), s))
                      .map(Path::toFile)

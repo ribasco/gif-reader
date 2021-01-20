@@ -81,6 +81,11 @@ import java.util.function.BiFunction;
  */
 public final class GifImageReader implements Closeable {
 
+    public enum PixelFormat {
+        ARGB,
+        BGRA
+    }
+
     //A filter that tells the reader to process all blocks it encounters
     public static final BlockFilter DO_NOT_SKIP = (ident, data) -> false;
 
@@ -188,6 +193,10 @@ public final class GifImageReader implements Closeable {
     private long lastLogicalScreenDescriptorOffset;
 
     private BlockFilter filter = DO_NOT_SKIP;
+
+    private DisposalMethod disposalOverride;
+
+    private PixelFormat pixelFormat = PixelFormat.ARGB;
     //</editor-fold>
 
     /**
@@ -198,10 +207,10 @@ public final class GifImageReader implements Closeable {
      *
      * @throws IOException
      *         When an I/O error occurs
-     * @see #GifImageReader(ImageInputStream, boolean)
+     * @see #GifImageReader(ImageInputStream, boolean, PixelFormat)
      */
     public GifImageReader(File imageFile) throws IOException {
-        this(ImageIO.createImageInputStream(imageFile), false);
+        this(ImageIO.createImageInputStream(imageFile), false, null);
     }
 
     /**
@@ -216,7 +225,7 @@ public final class GifImageReader implements Closeable {
      *         When an I/O error occurs
      */
     public GifImageReader(File imageFile, boolean renderActualFrame) throws IOException {
-        this(ImageIO.createImageInputStream(imageFile), renderActualFrame);
+        this(ImageIO.createImageInputStream(imageFile), renderActualFrame, null);
     }
 
     /**
@@ -242,10 +251,10 @@ public final class GifImageReader implements Closeable {
      *
      * @throws IOException
      *         When an I/O error occurs
-     * @see #GifImageReader(ImageInputStream, boolean)
+     * @see #GifImageReader(ImageInputStream, boolean, PixelFormat)
      */
     public GifImageReader(InputStream is, boolean renderActualFrame) throws IOException {
-        this(ImageIO.createImageInputStream(is), renderActualFrame);
+        this(ImageIO.createImageInputStream(is), renderActualFrame, null);
     }
 
     /**
@@ -255,13 +264,18 @@ public final class GifImageReader implements Closeable {
      *
      * @param is
      *         The {@link ImageInputStream} containing the GIF image data to be read and processed
+     * @param renderActualFrame
+     *         {@code True} if the reader should render each frame to it's actual form. Otherwise the raw untransformed image will be returned instead.
+     * @param format
+     *         The {@link PixelFormat} to use for the final rendered frame. Default format is {@link PixelFormat#ARGB}
      *
      * @throws IOException
      *         When an I/O error occurs
      */
-    public GifImageReader(ImageInputStream is, boolean renderActualFrame) throws IOException {
+    public GifImageReader(ImageInputStream is, boolean renderActualFrame, PixelFormat format) throws IOException {
         this.is = is;
         this.metadata = initializeImage(is);
+        this.pixelFormat = format == null ? PixelFormat.ARGB : format;
         if (renderActualFrame)
             this.frameRenderer = new FrameRenderer();
     }
@@ -364,18 +378,9 @@ public final class GifImageReader implements Closeable {
      *
      * @return A string of hexadecimal codes
      */
-    public static String toHexString(byte... data) {
+    private static String toHexString(byte... data) {
         StringBuilder sb = new StringBuilder(data.length * 2);
         for (byte b : data) {
-            sb.append(String.format("%02x", b).toUpperCase());
-            sb.append(" ");
-        }
-        return sb.toString();
-    }
-
-    public static String toHexString(int... data) {
-        StringBuilder sb = new StringBuilder(data.length * 2);
-        for (int b : data) {
             sb.append(String.format("%02x", b).toUpperCase());
             sb.append(" ");
         }
@@ -412,6 +417,8 @@ public final class GifImageReader implements Closeable {
     private void checkInit() {
         if (!initialized)
             throw new IllegalStateException("Reader not initialized");
+        if (closed)
+            throw new IllegalStateException("Read has been closed");
     }
 
     /**
@@ -457,7 +464,7 @@ public final class GifImageReader implements Closeable {
      */
     public GifFrame read() throws IOException {
         checkInit();
-        final BlockFilter filter = this.filter == null ? DO_NOT_SKIP : this.filter;
+        final var filter = this.filter == null ? DO_NOT_SKIP : this.filter;
         Block block;
         //scan the next image descriptor block
         while (!Block.TRAILER.equals(block = readBlock(is, metadata, filter))) {
@@ -472,6 +479,13 @@ public final class GifImageReader implements Closeable {
         if (!closed)
             reset();
         return null;
+    }
+
+    /**
+     * @return The current {@link PixelFormat} used. Default format is {@link PixelFormat#ARGB}
+     */
+    public PixelFormat getPixelFormat() {
+        return pixelFormat;
     }
 
     /**
@@ -613,54 +627,6 @@ public final class GifImageReader implements Closeable {
         log.debug("Global Color Table Size: {}", image.globalColorTableSize);
         log.debug("Background color index: {}", image.backgroundColorIndex);
         log.debug("Pixel aspect ratio: {}", image.pixelAspectRatio);
-    }
-
-    /**
-     * Process all supported data blocks (extension, image descriptors etc) available in the data stream
-     *
-     * @param is
-     *         The {@link ImageInputStream} instance to read and process the data from
-     * @param image
-     *         The {@link GifMetaData} instance where the processed data will be written to
-     *
-     * @throws IOException
-     *         When an I/O error occurs during data processing
-     */
-    private void readBlocks(ImageInputStream is, GifMetaData image) throws IOException {
-        //Process the remaining bytes
-        Block block;
-        while ((block = readBlock(is, image, null)) != null) {
-            if (Block.TRAILER.equals(block))
-                break;
-        }
-    }
-
-    /**
-     * Check if the next identifier is a valid block.
-     *
-     * @param is
-     *         The {@link ImageInputStream} to check
-     *
-     * @return {@code true} if the data stream contains a valid block that is available for processing,
-     * {@code false} if input stream is null/there are no more valid blocks to be processed/if we have reached {@link Block#TRAILER}.
-     *
-     * @throws IOException
-     *         When an I/O error occurs
-     */
-    private boolean hasNextBlock(ImageInputStream is) throws IOException {
-        if (is == null)
-            return false;
-        try {
-            is.mark();
-            int block = is.readUnsignedByte();
-            if (Block.TRAILER.getCodeInt() == block)
-                return false;
-            return Block.isValid(block);
-        } catch (EOFException e) {
-            return false;
-        } finally {
-            is.reset();
-        }
     }
 
     /**
@@ -856,14 +822,21 @@ public final class GifImageReader implements Closeable {
             try (var decoder = new GifDecoder(frame)) {
                 decoder.decode(encodedData);
             }
+
             //If interlace flag is set,
             if (frame.isInterlaced())
                 frame.data = ImageOps.deinterlace(frame);
 
             //render frame image if
-            // disposal is enabled
+            //disposal is enabled
             if (frameRenderer != null) {
                 frameRenderer.process(frame);
+            }
+
+            //convert to bgra format
+            if (pixelFormat != null && !PixelFormat.ARGB.equals(pixelFormat)) {
+                for (int i = 0; i < frame.data.length; i++)
+                    frame.data[i] = Integer.reverseBytes(frame.data[i]);
             }
         } else {
             log.debug("{}) Image data blocks were skipped. Decoding and/or deinterlacing will not take placee", frame.index);
@@ -1333,6 +1306,36 @@ public final class GifImageReader implements Closeable {
         }
     }
 
+    /**
+     * @return a {@link DisposalMethod} to be used as an override for the current definition.
+     *
+     * @see #setDisposalOverride(DisposalMethod)
+     */
+    public DisposalMethod getDisposalOverride() {
+        return disposalOverride;
+    }
+
+    /**
+     * <p>
+     * Override the disposal method of each frame affecting the final image of a frame. There are some images that are notencoded properly.
+     * In such cases, you can override the disposal method to get the desired output.
+     * </p>
+     * <br />
+     * <p>
+     * <strong>Note:</strong> This is only applicable if the value passed to the second constructor argument ({@code renderActualFrame}) is {@code true}
+     * </p>
+     *
+     * @param disposalOverride
+     *         The {@link DisposalMethod} to be used as a replacement or {@code null} to use the method defined in the frame.
+     *
+     * @see #GifImageReader(ImageInputStream, boolean, PixelFormat)
+     * @see #GifImageReader(File, boolean)
+     * @see #GifImageReader(InputStream, boolean)
+     */
+    public void setDisposalOverride(DisposalMethod disposalOverride) {
+        this.disposalOverride = disposalOverride;
+    }
+
     //<editor-fold desc="Utility Methods">
     private static boolean readGlobalColorTableFlag(byte packedByte) {
         return (packedByte & 0b10000000) >>> 7 == 1;
@@ -1490,7 +1493,7 @@ public final class GifImageReader implements Closeable {
     }
     //</editor-fold>
 
-    private static class FrameRenderer {
+    private class FrameRenderer {
 
         private GifFrame lastUndisposedFrame;
 
@@ -1522,6 +1525,8 @@ public final class GifImageReader implements Closeable {
             frame.width = logicalScreenWidth;
             frame.height = logicalScreenHeight;
             frame.rendered = true;
+            if (disposalOverride != null)
+                frame.disposalMethod = disposalOverride;
         }
 
         private void initialize(GifFrame frame) {
@@ -1543,7 +1548,7 @@ public final class GifImageReader implements Closeable {
             int logicalScreenWidth = frame.getMetadata().getWidth();
             int logicalScreenHeight = frame.getMetadata().getHeight();
 
-            var disposalMethod = frame.getDisposalMethod();
+            var disposalMethod = disposalOverride != null ? disposalOverride : frame.getDisposalMethod();
             //The disposal method gives instructions on what to do with the previous
             //frame once a new frame is displayed.
             switch (disposalMethod) {
