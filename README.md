@@ -1,5 +1,7 @@
 ### GIF Decoding Library
 
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.ibasco.gifreader/gif-reader/badge.svg?style=plastic)](https://search.maven.org/search?q=g:com.ibasco.gifreader) ![Build](https://github.com/ribasco/gif-reader/actions/workflows/build.yml/badge.svg) ![master](https://github.com/ribasco/gif-reader/actions/workflows/release.yml/badge.svg) ![Pull Requests](https://github.com/ribasco/gif-reader/actions/workflows/build.yml/badge.svg?event=pull_request)
+
 A pure java implementation of the  [GIF89a specification](https://www.w3.org/Graphics/GIF/spec-gif89a.txt).
 
 #### Motivation
