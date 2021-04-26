@@ -28,7 +28,7 @@
 
     <groupId>com.ibasco.gifreader</groupId>
     <artifactId>gif-reader</artifactId>
-    <version>${revision}</version>
+    <version>${revision}${sha1}${changelist}</version>
 
     <name>GIF Reader</name>
     <description>A pure java implementation of the GIF89a specification</description>
@@ -38,8 +38,9 @@
 
     <!-- Project properties -->
     <properties>
-        <release>1.0.0</release>
-        <revision>${release}-SNAPSHOT</revision>
+        <revision>1.0.0</revision>
+        <changelist>-SNAPSHOT</changelist>
+        <sha1/>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -223,6 +224,32 @@
 
         <pluginManagement>
             <plugins>
+                <!-- Flatten Plugin -->
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>flatten-maven-plugin</artifactId>
+                    <version>1.2.2</version>
+                    <configuration>
+                        <updatePomFile>true</updatePomFile>
+                        <flattenMode>resolveCiFriendliesOnly</flattenMode>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>flatten</id>
+                            <phase>process-resources</phase>
+                            <goals>
+                                <goal>flatten</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>flatten.clean</id>
+                            <phase>clean</phase>
+                            <goals>
+                                <goal>clean</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
                 <!-- SOURCE Plugin -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -303,6 +330,7 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.8.1</version>
                     <configuration>
+                        <fork>true</fork>
                         <debug>true</debug>
                         <optimize>true</optimize>
                         <showDeprecation>true</showDeprecation>
@@ -380,6 +408,11 @@
         </pluginManagement>
 
         <plugins>
+            <!-- Flatten Plugin -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+            </plugin>
             <!-- JAR Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
