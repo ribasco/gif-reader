@@ -8,6 +8,19 @@ A pure java implementation of the  [GIF89a specification](https://www.w3.org/Gra
 
 After testing some GIF decoding libraries available (ImageIO, Apache Commons Imaging, DhyanB...) for Java, I found that there were still cases where some animated images were not processed or handled properly, resulting in deformation on the output image or simply returning in error (due to `OutOfMemoryError` or `ArrayIndexOutOfBoundsException`). This library was developed with the intention of addressing these issues.
 
+#### Installation
+
+Just add the dependency entry below in your `pom.xml` file
+
+~~~xml
+
+<dependency>
+  <groupId>com.ibasco.gifreader</groupId>
+  <artifactId>gif-reader</artifactId>
+  <version>1.0.0</version>
+</dependency>
+~~~
+
 #### Minimum JDK Version
 
 JDK 11+
