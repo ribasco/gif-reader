@@ -5,9 +5,15 @@ on:
     branches: [ master ]
     tags:
       - '!refs/tags/*'
+    paths-ignore:
+    - '**/README.md'
+    - '**/.github/**'
   pull_request:
     branches: [ master ]
-
+    paths-ignore:
+    - '**/README.md'
+    - '**/.github/**'
+    
 jobs:
   build-project:
     name: 'Build'
