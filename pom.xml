@@ -46,23 +46,6 @@
     </properties>
 
     <profiles>
-        <!-- Deploy to Sonatype -->
-        <profile>
-            <id>deploy-sonatype</id>
-            <distributionManagement>
-                <repository>
-                    <id>ossrh</id>
-                    <name>Sonatype Release Repository</name>
-                    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-                </repository>
-                <snapshotRepository>
-                    <id>ossrh</id>
-                    <name>Sonatype Snapshots Repository</name>
-                    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-                </snapshotRepository>
-            </distributionManagement>
-        </profile>
-
         <!-- Release profile (includes artifact signing and javadoc generation -->
         <profile>
             <id>release</id>
@@ -130,7 +113,7 @@
         <repository>
             <id>ossrh</id>
             <name>Sonatype Release</name>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
         <snapshotRepository>
             <id>ossrh</id>
