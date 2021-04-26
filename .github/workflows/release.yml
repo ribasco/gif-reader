@@ -29,7 +29,9 @@ jobs:
         run: echo ${{ steps.extract_branch.outputs.branch }}
 
       - name: Build Java Project
-        run: mvn install -P'release' -Drevision=${{ steps.extract_branch.outputs.branch }} -Dgpg.skip=true -Dlicense.skipUpdateLicense=true -DskipTests=true -Dmaven.javadoc.skip=true -B -V --file pom.xml
+        run: mvn install -P'release' -Dchangelist= -Dgpg.skip=true -Dlicense.skipUpdateLicense=true -DskipTests=true -Dmaven.javadoc.skip=true -B -V --file pom.xml
+
+        # -Drevision=${{ steps.extract_branch.outputs.branch }}
 
       - name: Unit Tests
         run: mvn test
@@ -49,7 +51,7 @@ jobs:
           gpg-passphrase: GPG_AUTHOR_PASSPHRASE # env variable for GPG private key passphrase
 
       - name: Publish to Sonatype (Staging)
-        run: mvn deploy -P'release' -Drevision=${{ steps.extract_branch.outputs.branch }} -DskipTests=true -Dlicense.skipUpdateLicense=true
+        run: mvn deploy -P'release' -Dchangelist= -DskipTests=true -Dlicense.skipUpdateLicense=true
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
