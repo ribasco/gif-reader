@@ -95,6 +95,7 @@ public class GifMetaData {
     }
 
     /**
+     * <p>
      * The Plain Text Extension contains textual data and the
      * parameters necessary to render that data as a graphic, in a simple form.
      * The textual data will be encoded with the 7-bit printable ASCII
@@ -104,7 +105,9 @@ public class GifMetaData {
      * as mono-spaced characters, one character per cell, with a best fitting
      * font and size. For further information, see the section on
      * Recommendations below.
+     * </p>
      * <p>
+     * <br />
      * The data characters are taken sequentially from
      * the data portion of the block and rendered within a cell, starting with
      * the upper left cell in the grid and proceeding from left to right and
@@ -115,6 +118,7 @@ public class GifMetaData {
      * encoder must be careful to specify the grid dimensions accurately so that
      * this does not happen.
      * <p>
+     * <br />
      * This block requires a Global Color Table to be
      * available; the colors used by this block reference the Global Color Table
      * in the Stream if there is one, or the Global Color Table from a previous

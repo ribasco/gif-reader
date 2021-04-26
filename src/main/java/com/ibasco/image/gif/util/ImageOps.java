@@ -152,7 +152,7 @@ public final class ImageOps {
         return ((outA & 0xff) << 24) | ((outR & 0xff) << 16) | ((outG & 0xff) << 8) | (outB & 0xff);
     }
 
-    //borrowed from Dhyan Blum's GifDecoder implementation
+    //credits to Dhyan Blum's GifDecoder implementation for this bit
     public static int[] deinterlace(final GifFrame frame) {
         final int[] src = frame.getData();
         final int w = frame.getWidth(), h = frame.getHeight(), wh = frame.getWidth() * frame.getHeight();

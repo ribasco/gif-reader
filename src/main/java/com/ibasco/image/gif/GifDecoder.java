@@ -24,22 +24,7 @@ import java.io.IOException;
 import java.nio.IntBuffer;
 
 /**
- * A class responsible for decoding image data blocks (encoded in LZW algorithm)
- *
- * <p>
- * <br />
- * Note from spec regarding color tables:
- * <blockquote>
- * Both types of color tables are optional, making it
- * possible for a Data Stream to contain numerous graphics without a color table
- * at all. For this reason, it is recommended that the decoder save the last
- * Global Color Table used until another Global Color Table is encountered. In
- * this way, a Data Stream which does not contain either a Global Color Table or
- * a Local Color Table may be processed using the last Global Color Table saved.
- * If a Global Color Table from a previous Stream is used, that table becomes the
- * Global Color Table of the present Stream. This is intended to reduce the
- * overhead incurred by color tables.
- * </blockquote>
+ * A class for decoding GIF image data blocks (encoded in LZW algorithm)
  *
  * @author Rafael Luis Ibasco
  * @implNote Both types of color tables are optional, making it

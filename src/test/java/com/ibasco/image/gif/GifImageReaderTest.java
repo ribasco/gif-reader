@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.util.Objects;
 
 class GifImageReaderTest extends BaseTest {
 
@@ -42,7 +43,7 @@ class GifImageReaderTest extends BaseTest {
     private GifImageReader reader;
 
     @Spy
-    private final BufferedInputStream is = new BufferedInputStream(getClass().getResourceAsStream("/test002.gif"));
+    private final BufferedInputStream is = new BufferedInputStream(Objects.requireNonNull(getClass().getResourceAsStream("/test002.gif")));
 
     @BeforeEach
     void setUp() throws Exception {
@@ -83,7 +84,6 @@ class GifImageReaderTest extends BaseTest {
         assertEquals(256, reader.getMetadata().getColorResolution());
         assertTrue(reader.getMetadata().getBackgroundColor() != 0);
         assertTrue(reader.getMetadata().hasGlobalColorTable());
-        //assertNotNull();
         log.info("Data: {}", reader.getMetadata().getComments());
     }
 

@@ -64,7 +64,7 @@ import java.util.function.BiFunction;
  *
  * <p><strong>Example 03: </strong></p>
  * <pre>
- *  //Passing true as a second argument on the constructor will let the reader render each frame to it's final form. This happens on-the-fly as you call {@link #read()}
+ *  //Passing true as a second argument on the constructor will let the reader render each frame to it's final form. This is processed on-the-fly as you call {@link #read()}
  *
  *  var file = new File("/home/user/example.gif");
  *  try (var reader = new GifImageReader(file, true)) {
