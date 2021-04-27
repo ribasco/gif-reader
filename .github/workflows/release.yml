@@ -13,7 +13,7 @@ jobs:
         java: [ '11' ]
     steps:
       - uses: actions/checkout@v2
-      - name: Setup JDK 11
+      - name: Setup Java JDK
         uses: actions/setup-java@v2
         with:
           distribution: 'adopt'
@@ -31,15 +31,13 @@ jobs:
       - name: Build Java Project
         run: mvn install -P'release' -Dchangelist= -Dgpg.skip=true -Dlicense.skipUpdateLicense=true -DskipTests=true -Dmaven.javadoc.skip=true -B -V --file pom.xml
 
-        # -Drevision=${{ steps.extract_branch.outputs.branch }}
-
       - name: Unit Tests
         run: mvn test
 
       - name: Integration Tests
         run: mvn verify
 
-      - name: Set up Sonatype
+      - name: Set up for Sonatype
         uses: actions/setup-java@v2
         with: # running setup-java again overwrites the settings.xml
           distribution: 'adopt'
@@ -51,8 +49,19 @@ jobs:
           gpg-passphrase: GPG_AUTHOR_PASSPHRASE # env variable for GPG private key passphrase
 
       - name: Publish to Sonatype (Staging)
-        run: mvn deploy -P'release' -Dchangelist= -DskipTests=true -Dlicense.skipUpdateLicense=true
+        run: mvn --batch-mode deploy -P'release' -Dchangelist= -DskipTests=true -Dlicense.skipUpdateLicense=true -Dmaven.javadoc.skip=true
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           GPG_AUTHOR_PASSPHRASE: ${{ secrets.GPG_AUTHOR_PASSPHRASE }}
+
+      - name: Set up for GitHub Packages
+        uses: actions/setup-java@v2
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+
+      - name: Publish to GitHub Packages
+        run: mvn --batch-mode deploy -P'release' -Dchangelist= -DskipTests=true -Dlicense.skipUpdateLicense=true -Dmaven.javadoc.skip=true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
