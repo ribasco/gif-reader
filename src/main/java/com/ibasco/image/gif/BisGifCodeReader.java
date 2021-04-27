@@ -17,8 +17,6 @@
 package com.ibasco.image.gif;
 
 import org.apache.commons.compress.utils.BitInputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -30,8 +28,6 @@ import java.nio.ByteOrder;
  * @author Rafael Luis Ibasco
  */
 public class BisGifCodeReader extends BaseGifCodeReader {
-
-    private static final Logger log = LoggerFactory.getLogger(BisGifCodeReader.class);
 
     private final BitInputStream bis;
 
