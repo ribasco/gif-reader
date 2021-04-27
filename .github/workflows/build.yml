@@ -52,19 +52,8 @@ jobs:
 
       - name: Publish to Sonatype (Snapshots)
         if: github.event_name != 'pull_request' && github.event_name != 'release'
-        run: mvn deploy -DskipTests=true -Dlicense.skipUpdateLicense=true -Dmaven.javadoc.skip=true
+        run: mvn --batch-mode deploy -P'deploy-sonatype' -DskipTests=true -Dlicense.skipUpdateLicense=true -Dmaven.javadoc.skip=true
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           GPG_AUTHOR_PASSPHRASE: ${{ secrets.GPG_AUTHOR_PASSPHRASE }}
-
-      - name: Set up for GitHub Packages
-        uses: actions/setup-java@v2
-        with:
-          java-version: '11'
-          distribution: 'adopt'
-
-      - name: Publish to GitHub Packages
-        run: mvn --batch-mode deploy -DskipTests=true -Dlicense.skipUpdateLicense=true -Dmaven.javadoc.skip=true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
