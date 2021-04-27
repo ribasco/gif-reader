@@ -43,6 +43,7 @@
         <sha1/>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.release>11</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -83,6 +84,35 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <!-- Deploy Profile : Sonatype -->
+        <profile>
+            <id>deploy-sonatype</id>
+            <distributionManagement>
+                <repository>
+                    <id>ossrh</id>
+                    <name>Sonatype Release</name>
+                    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+                </repository>
+                <snapshotRepository>
+                    <id>ossrh</id>
+                    <name>Sonatype Snapshots</name>
+                    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+                </snapshotRepository>
+            </distributionManagement>
+        </profile>
+
+        <!-- Deploy Profile : Github -->
+        <profile>
+            <id>deploy-github</id>
+            <distributionManagement>
+                <repository>
+                    <id>github</id>
+                    <name>GitHub Release Packages</name>
+                    <url>https://maven.pkg.github.com/ribasco/gif-reader</url>
+                </repository>
+            </distributionManagement>
         </profile>
     </profiles>
 
