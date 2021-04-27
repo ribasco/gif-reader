@@ -38,7 +38,7 @@
 
     <!-- Project properties -->
     <properties>
-        <revision>1.0.0</revision>
+        <revision>1.0.1</revision>
         <changelist>-SNAPSHOT</changelist>
         <sha1/>
         <maven.compiler.source>11</maven.compiler.source>
