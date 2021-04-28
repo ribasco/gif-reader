@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.ibasco.image.gif;
+package com.ibasco.image.gif.io;
 
 import java.io.IOException;
 
@@ -48,11 +48,6 @@ abstract public class BaseGifCodeReader implements GifCodeReader {
         this.fromIndex = fromIndex;
     }
 
-    /**
-     * Reads a single LZW encoded byte
-     *
-     * @return An unsigned 32-bit LZW encoded integer
-     */
     @Override
     abstract public int read() throws IOException;
 
@@ -66,18 +61,11 @@ abstract public class BaseGifCodeReader implements GifCodeReader {
         return offset;
     }
 
-    /**
-     * Call this method if you need to increase the code size by 1. Please note that internally,
-     * we are not directly manipulating the code size value, rather an offset's value is increased
-     */
     @Override
     public void increaseCodeSizeOffset() {
         this.offset++;
     }
 
-    /**
-     * Clears the code size offset which then allows us to revert back to the original code size value.
-     */
     @Override
     public void clearCodeSizeOffset() {
         this.offset = 0;

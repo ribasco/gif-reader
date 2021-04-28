@@ -1,7 +1,7 @@
-/gifdecoder.iml
 /target/
-/gif-reader.iml
 /samples/sample12-big-nsfw.gif
 /samples/sample10.gif
 /samples/sample11.gif
 /samples/sample12-nsfw.gif
+/.flattened-pom.xml
+*.iml

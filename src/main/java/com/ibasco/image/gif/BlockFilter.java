@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.ibasco.image.gif.util;
+package com.ibasco.image.gif;
 
 import com.ibasco.image.gif.enums.BlockIdentifier;
 

@@ -16,6 +16,8 @@
 
 package com.ibasco.image.gif;
 
+import com.ibasco.image.gif.io.BisGifCodeReader;
+import com.ibasco.image.gif.io.GifCodeReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +29,7 @@ import java.nio.IntBuffer;
  * A class for decoding GIF image data blocks (encoded in LZW algorithm)
  *
  * @author Rafael Luis Ibasco
+ *
  * @implNote Both types of color tables are optional, making it
  * possible for a Data Stream to contain numerous graphics without a color table
  * at all. For this reason, it is recommended that the decoder save the last
@@ -144,15 +147,6 @@ public class GifDecoder implements Closeable {
         outputToImage(this.currentCode);
 
         initializedData = true;
-    }
-
-    public void decode(final GifFrame frame, byte[] data) throws IOException {
-        try {
-            initializeFrame(frame);
-            decode(data);
-        } finally {
-            close();
-        }
     }
 
     /**

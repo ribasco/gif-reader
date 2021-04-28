@@ -21,13 +21,13 @@ import com.ibasco.image.gif.enums.DisposalMethod;
 import com.ibasco.image.gif.enums.ExtensionBlock;
 import com.ibasco.image.gif.exceptions.InvalidSignatureException;
 import com.ibasco.image.gif.exceptions.UnsupportedBlockException;
-import com.ibasco.image.gif.util.BlockFilter;
+import com.ibasco.image.gif.io.ByteBufferImageInputStream;
+import com.ibasco.image.gif.io.ImageInputStream;
 import com.ibasco.image.gif.util.ImageOps;
+import org.apiguardian.api.API;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.imageio.ImageIO;
-import javax.imageio.stream.ImageInputStream;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -81,6 +81,7 @@ import java.util.function.BiFunction;
  */
 public final class GifImageReader implements Closeable {
 
+    @API(status = API.Status.EXPERIMENTAL)
     public enum PixelFormat {
         ARGB,
         BGRA
@@ -188,9 +189,9 @@ public final class GifImageReader implements Closeable {
     private FrameRenderer frameRenderer;
 
     //take note of the last image descriptor offset that was processed,
-    private long lastImageDescriptorOffset;
+    private int lastImageDescriptorOffset;
 
-    private long lastLogicalScreenDescriptorOffset;
+    private int lastLogicalScreenDescriptorOffset;
 
     private BlockFilter filter = DO_NOT_SKIP;
 
@@ -209,8 +210,9 @@ public final class GifImageReader implements Closeable {
      *         When an I/O error occurs
      * @see #GifImageReader(ImageInputStream, boolean, PixelFormat)
      */
+    @API(status = API.Status.STABLE)
     public GifImageReader(File imageFile) throws IOException {
-        this(ImageIO.createImageInputStream(imageFile), false, null);
+        this(imageFile, false);
     }
 
     /**
@@ -224,8 +226,9 @@ public final class GifImageReader implements Closeable {
      * @throws IOException
      *         When an I/O error occurs
      */
+    @API(status = API.Status.STABLE)
     public GifImageReader(File imageFile, boolean renderActualFrame) throws IOException {
-        this(ImageIO.createImageInputStream(imageFile), renderActualFrame, null);
+        this(createImageInputStream(imageFile), renderActualFrame, null);
     }
 
     /**
@@ -237,6 +240,7 @@ public final class GifImageReader implements Closeable {
      * @throws IOException
      *         When an I/O error occurs
      */
+    @API(status = API.Status.STABLE)
     public GifImageReader(InputStream is) throws IOException {
         this(is, false);
     }
@@ -253,8 +257,9 @@ public final class GifImageReader implements Closeable {
      *         When an I/O error occurs
      * @see #GifImageReader(ImageInputStream, boolean, PixelFormat)
      */
+    @API(status = API.Status.STABLE)
     public GifImageReader(InputStream is, boolean renderActualFrame) throws IOException {
-        this(ImageIO.createImageInputStream(is), renderActualFrame, null);
+        this(createImageInputStream(is), renderActualFrame, null);
     }
 
     /**
@@ -272,12 +277,25 @@ public final class GifImageReader implements Closeable {
      * @throws IOException
      *         When an I/O error occurs
      */
+    @API(status = API.Status.EXPERIMENTAL)
     public GifImageReader(ImageInputStream is, boolean renderActualFrame, PixelFormat format) throws IOException {
         this.is = is;
         this.metadata = initializeImage(is);
         this.pixelFormat = format == null ? PixelFormat.ARGB : format;
         if (renderActualFrame)
             this.frameRenderer = new FrameRenderer();
+    }
+
+    protected static ImageInputStream createImageInputStream(Object obj) throws IOException {
+        if (obj instanceof ImageInputStream) {
+            return (ImageInputStream) obj;
+        } else if (obj instanceof File) {
+            return new ByteBufferImageInputStream((File) obj);
+        } else if (obj instanceof InputStream) {
+            return new ByteBufferImageInputStream((InputStream) obj);
+        } else {
+            throw new IOException("Invalid input source");
+        }
     }
 
     /**
@@ -294,7 +312,7 @@ public final class GifImageReader implements Closeable {
         if (size <= 0)
             throw new IOException("Empty block size");
         is.mark();
-        int skipped = is.skipBytes(size);
+        long skipped = is.skipBytes(size);
         if (skipped != size)
             throw new IOException(String.format("The number of remaining bytes is not equals to the expected block size (Remaining: %d, Expected: %d)", skipped, size));
         is.reset();
@@ -429,6 +447,7 @@ public final class GifImageReader implements Closeable {
      * @apiNote Calling this method does not guarantee that the next read operation will be successful.
      * It simply checks if the next byte is a valid block identifier.
      */
+    @API(status = API.Status.STABLE)
     public boolean hasRemaining() {
         if (metadata == null)
             return false;
@@ -440,6 +459,7 @@ public final class GifImageReader implements Closeable {
      *
      * @return The current {@link BlockFilter} used by the reader
      */
+    @API(status = API.Status.STABLE)
     public BlockFilter getFilter() {
         return filter;
     }
@@ -450,6 +470,7 @@ public final class GifImageReader implements Closeable {
      * @param filter
      *         The {@link BlockFilter} callback function
      */
+    @API(status = API.Status.STABLE)
     public void setFilter(BlockFilter filter) {
         this.filter = filter;
     }
@@ -462,6 +483,7 @@ public final class GifImageReader implements Closeable {
      * @throws IOException
      *         When an I/O error occurs
      */
+    @API(status = API.Status.STABLE)
     public GifFrame read() throws IOException {
         checkInit();
         final var filter = this.filter == null ? DO_NOT_SKIP : this.filter;
@@ -484,6 +506,7 @@ public final class GifImageReader implements Closeable {
     /**
      * @return The current {@link PixelFormat} used. Default format is {@link PixelFormat#ARGB}
      */
+    @API(status = API.Status.EXPERIMENTAL)
     public PixelFormat getPixelFormat() {
         return pixelFormat;
     }
@@ -491,6 +514,7 @@ public final class GifImageReader implements Closeable {
     /**
      * @return Returns the metadata whose scope covers the entire data stream
      */
+    @API(status = API.Status.STABLE)
     public final GifMetaData getMetadata() {
         return metadata;
     }
@@ -500,6 +524,7 @@ public final class GifImageReader implements Closeable {
      *
      * @return The total number of frames available in the current image or -1 if unable to get count
      */
+    @API(status = API.Status.STABLE)
     public int getTotalFrames() {
         try {
             if (metadata == null || is == null)
@@ -1199,6 +1224,49 @@ public final class GifImageReader implements Closeable {
         printDebugHeader("END: Application extension block");
     }
 
+    @Override
+    @API(status = API.Status.STABLE)
+    public void close() throws IOException {
+        if (!closed && this.is != null) {
+            this.is.close();
+            reset();
+            closed = true;
+            log.debug("Successfully closed the underlying image input stream");
+        }
+    }
+
+    /**
+     * @return a {@link DisposalMethod} to be used as an override for the current definition.
+     *
+     * @see #setDisposalOverride(DisposalMethod)
+     */
+    @API(status = API.Status.EXPERIMENTAL)
+    public DisposalMethod getDisposalOverride() {
+        return disposalOverride;
+    }
+
+    /**
+     * <p>
+     * Override the disposal method of each frame affecting the final image of a frame. There are some images that are notencoded properly.
+     * In such cases, you can override the disposal method to get the desired output.
+     * </p>
+     * <br />
+     * <p>
+     * <strong>Note:</strong> This is only applicable if the value passed to the second constructor argument ({@code renderActualFrame}) is {@code true}
+     * </p>
+     *
+     * @param disposalOverride
+     *         The {@link DisposalMethod} to be used as a replacement or {@code null} to use the method defined in the frame.
+     *
+     * @see #GifImageReader(ImageInputStream, boolean, PixelFormat)
+     * @see #GifImageReader(File, boolean)
+     * @see #GifImageReader(InputStream, boolean)
+     */
+    @API(status = API.Status.EXPERIMENTAL)
+    public void setDisposalOverride(DisposalMethod disposalOverride) {
+        this.disposalOverride = disposalOverride;
+    }
+
     /**
      * Reads and process local color table of an image frame
      *
@@ -1294,46 +1362,6 @@ public final class GifImageReader implements Closeable {
         log.debug("Reading global color table (Size: {})", image.globalColorTableSize);
         image.globalColorTable = new int[image.globalColorTableSize];
         readColorTable(is, image.globalColorTable);
-    }
-
-    @Override
-    public void close() throws IOException {
-        if (!closed && this.is != null) {
-            this.is.close();
-            reset();
-            closed = true;
-            log.debug("Successfully closed the underlying image input stream");
-        }
-    }
-
-    /**
-     * @return a {@link DisposalMethod} to be used as an override for the current definition.
-     *
-     * @see #setDisposalOverride(DisposalMethod)
-     */
-    public DisposalMethod getDisposalOverride() {
-        return disposalOverride;
-    }
-
-    /**
-     * <p>
-     * Override the disposal method of each frame affecting the final image of a frame. There are some images that are notencoded properly.
-     * In such cases, you can override the disposal method to get the desired output.
-     * </p>
-     * <br />
-     * <p>
-     * <strong>Note:</strong> This is only applicable if the value passed to the second constructor argument ({@code renderActualFrame}) is {@code true}
-     * </p>
-     *
-     * @param disposalOverride
-     *         The {@link DisposalMethod} to be used as a replacement or {@code null} to use the method defined in the frame.
-     *
-     * @see #GifImageReader(ImageInputStream, boolean, PixelFormat)
-     * @see #GifImageReader(File, boolean)
-     * @see #GifImageReader(InputStream, boolean)
-     */
-    public void setDisposalOverride(DisposalMethod disposalOverride) {
-        this.disposalOverride = disposalOverride;
     }
 
     //<editor-fold desc="Utility Methods">
@@ -1433,54 +1461,20 @@ public final class GifImageReader implements Closeable {
      * Reads contiguous stream of sub-data blocks from the data stream.
      *
      * @param is
-     *         The {@link ByteBuffer} to read the data from
-     * @param offset
-     *         The starting offset in the destination buffer, the point which data will start to be written.
-     * @param dst
-     *         A pre-allocated array of bytes where the processed data will be written to
-     *
-     * @return The total number of bytes read or 0 if no bytes have been read
-     */
-    private int readDataBlocks(ImageInputStream is, int offset, byte[] dst) throws IOException {
-        if (dst == null)
-            throw new IllegalArgumentException("Destination buffer must not be null");
-        if (dst.length == 0)
-            return 0;
-        //note: per spec, block size does not take into account the size byte
-        int blockSize;
-        int dstOffset = offset;
-        int bytesRead = 0;
-        while ((blockSize = is.readUnsignedByte()) > 0) {
-            is.read(dst, dstOffset, blockSize);
-            bytesRead += blockSize;
-            dstOffset += blockSize;
-        }
-        return bytesRead;
-    }
-
-    /**
-     * Reads contiguous stream of sub-data blocks from the data stream.
-     *
-     * @param is
      *         The {@link ByteBuffer} instance to read the data from
      * @param callback
      *         A callback responsible for processing each found data-block
-     *
-     * @return The total number of bytes processed (total data block size)
      */
-    private int readDataBlocks(ImageInputStream is, BiConsumer<ByteBuffer, Integer> callback) throws IOException {
-        int totalSize = 0;
+    private void readDataBlocks(ImageInputStream is, BiConsumer<ByteBuffer, Integer> callback) throws IOException {
         //note: per spec, block size does not take into account the size byte
         int blockSize;
         while ((blockSize = is.readUnsignedByte()) > 0) {
             var data = new byte[blockSize];
             int bytesRead = is.read(data);
-            totalSize += bytesRead;
             //create new bytebuffer instance but share the same content of the source
             if (callback != null)
                 callback.accept(ByteBuffer.wrap(data), bytesRead);
         }
-        return totalSize;
     }
 
     private void reset() {

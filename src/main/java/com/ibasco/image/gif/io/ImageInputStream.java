@@ -14,27 +14,38 @@
  * limitations under the License.
  */
 
-package com.ibasco.image.gif;
+package com.ibasco.image.gif.io;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.nio.ByteOrder;
 
 /**
- * The interface for GIF Code Readers
+ * Interface containing operations for reading from an Image file
  *
  * @author Rafael Luis Ibasco
  */
-public interface GifCodeReader extends Closeable {
+public interface ImageInputStream extends Closeable {
 
-    int read() throws IOException;
+    int read(byte[] buffer, int offset, int length);
 
-    int getCodeSize();
+    int read(byte[] buffer);
 
-    int getCodeSizeOffset();
+    void mark();
 
-    void increaseCodeSizeOffset();
+    void reset() throws IOException;
 
-    void clearCodeSizeOffset();
+    void setByteOrder(ByteOrder order);
 
-    void close() throws IOException;
+    int getStreamPosition();
+
+    void seek(int pos);
+
+    byte readByte() throws IOException;
+
+    short readShort() throws IOException;
+
+    int readUnsignedByte() throws IOException;
+
+    long skipBytes(int count) throws IOException;
 }

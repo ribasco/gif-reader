@@ -17,6 +17,7 @@
 package com.ibasco.image.gif;
 
 import com.ibasco.image.gif.enums.DisposalMethod;
+import org.apiguardian.api.API;
 
 /**
  * Represents a single frame of a GIF Image
@@ -25,6 +26,7 @@ import com.ibasco.image.gif.enums.DisposalMethod;
  */
 public class GifFrame {
 
+    //<editor-fold desc="Private members">
     final GifMetaData metadata;
 
     boolean rendered;
@@ -70,15 +72,21 @@ public class GifFrame {
     int index;
 
     boolean skipped; //internal use only
+    //</editor-fold>
 
     GifFrame(int index, GifMetaData metadata) {
         this.metadata = metadata;
         this.index = index;
     }
 
+    public boolean hasTransparency() {
+        return transparencyFlag;
+    }
+
     /**
      * @return The frame index
      */
+    @API(status = API.Status.STABLE)
     public int getIndex() {
         return index;
     }
@@ -89,6 +97,7 @@ public class GifFrame {
      * @return The active color table containing an array of codes. The local color table will take priority if
      * the {@code localColorTableFlag} is set, otherwise the global color table will be used instead.
      */
+    @API(status = API.Status.STABLE)
     public int[] getActiveColorTable() {
         if (hasLocalColorTable()) {
             return localColorTable;
@@ -108,6 +117,7 @@ public class GifFrame {
      * @return {@code True} - local color table present, and to follow immediately after this image descriptor. <p>
      * {@code False} - local color table is not present. Use global color table if available.
      */
+    @API(status = API.Status.STABLE)
     public boolean hasLocalColorTable() {
         return localColorTableFlag;
     }
@@ -115,6 +125,7 @@ public class GifFrame {
     /**
      * @return The image metadata
      */
+    @API(status = API.Status.STABLE)
     public GifMetaData getMetadata() {
         return metadata;
     }
@@ -152,6 +163,7 @@ public class GifFrame {
      *      </tr>
      * </table>
      */
+    @API(status = API.Status.STABLE)
     public DisposalMethod getDisposalMethod() {
         return disposalMethod;
     }
@@ -172,6 +184,7 @@ public class GifFrame {
      * processing will continue when user input is received or when the
      * delay time expires, whichever occurs first.
      */
+    @API(status = API.Status.STABLE)
     public boolean isUserInputSupported() {
         return userInputFlag;
     }
@@ -184,6 +197,7 @@ public class GifFrame {
      *           true -  Transparent Index is given.
      * </pre>
      */
+    @API(status = API.Status.STABLE)
     public boolean isTransparencySupported() {
         return transparencyFlag;
     }
@@ -195,6 +209,7 @@ public class GifFrame {
      * after the graphic is rendered. This field may be used in
      * conjunction with the User Input Flag field.
      */
+    @API(status = API.Status.STABLE)
     public int getDelay() {
         return delay;
     }
@@ -205,6 +220,7 @@ public class GifFrame {
      * modified and processing goes on to the next pixel. The index is
      * present if and only if the Transparency Flag is set to 1.
      */
+    @API(status = API.Status.STABLE)
     public int getTransparencyIndex() {
         return transparencyIndex;
     }
@@ -213,6 +229,7 @@ public class GifFrame {
      * Column number, in pixels, of the left edge of the image, with respect to the
      * left edge of the Logical Screen. Leftmost column of the Logical Screen is 0.
      */
+    @API(status = API.Status.STABLE)
     public int getLeftPos() {
         return leftPos;
     }
@@ -221,6 +238,7 @@ public class GifFrame {
      * Row number, in pixels, of the top edge of the image with respect to the
      * top edge of the Logical Screen. Top row of the Logical Screen is 0.
      */
+    @API(status = API.Status.STABLE)
     public int getTopPos() {
         return topPos;
     }
@@ -228,6 +246,7 @@ public class GifFrame {
     /**
      * Width of the image frame in pixels
      */
+    @API(status = API.Status.STABLE)
     public int getWidth() {
         return width;
     }
@@ -235,6 +254,7 @@ public class GifFrame {
     /**
      * Height of the image frame in pixels
      */
+    @API(status = API.Status.STABLE)
     public int getHeight() {
         return height;
     }
@@ -245,6 +265,7 @@ public class GifFrame {
      *
      * @return {@code True} - Image is interlaced
      */
+    @API(status = API.Status.STABLE)
     public boolean isInterlaced() {
         return interlaceFlag;
     }
@@ -263,6 +284,7 @@ public class GifFrame {
      * <p>
      * {@code False} - Not ordered
      */
+    @API(status = API.Status.STABLE)
     public boolean isSorted() {
         return sortFlag;
     }
@@ -276,6 +298,7 @@ public class GifFrame {
      * specified. (This field is made up of the 3 least significant bits
      * of the byte.)
      */
+    @API(status = API.Status.STABLE)
     public int getLocalColorTableSize() {
         return localColorTableSize;
     }
@@ -297,6 +320,7 @@ public class GifFrame {
      *
      * @apiNote Required Version:  87a.
      */
+    @API(status = API.Status.STABLE)
     public int[] getLocalColorTable() {
         return localColorTable;
     }
@@ -308,6 +332,7 @@ public class GifFrame {
      *
      * @return The code value
      */
+    @API(status = API.Status.STABLE)
     public int getCodeSize() {
         return codeSize;
     }
@@ -323,6 +348,7 @@ public class GifFrame {
      *
      * @return The code value
      */
+    @API(status = API.Status.STABLE)
     public int getClearCode() {
         return clearCode;
     }
@@ -335,13 +361,15 @@ public class GifFrame {
      *
      * @return The code value
      */
+    @API(status = API.Status.STABLE)
     public int getEndOfInfoCode() {
         return endOfInfoCode;
     }
 
     /**
-     * @return The decoded image data (ARGB format)
+     * @return The decoded image data (In ARGB Integer format)
      */
+    @API(status = API.Status.EXPERIMENTAL)
     public int[] getData() {
         return data;
     }
@@ -349,6 +377,7 @@ public class GifFrame {
     /**
      * @return {@code True} if the frame has been rendered to it's actual form
      */
+    @API(status = API.Status.STABLE)
     public boolean isRendered() {
         return rendered;
     }

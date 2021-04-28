@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.ibasco.image.gif;
+package com.ibasco.image.gif.io;
 
 import org.apache.commons.compress.utils.BitInputStream;
 
@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.nio.ByteOrder;
 
 /**
- * GIF Code Reader using {@link BitInputStream}
+ * A GIF Code reader utilizing Apache common's {@link BitInputStream} implementation
  *
  * @author Rafael Luis Ibasco
  */
