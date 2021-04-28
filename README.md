@@ -17,17 +17,13 @@ Just add the dependency entry below in your `pom.xml` file
 <dependency>
   <groupId>com.ibasco.gifreader</groupId>
   <artifactId>gif-reader</artifactId>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
 </dependency>
 ~~~
 
 #### Minimum JDK Version
 
 JDK 11+
-
-#### Limitations
-
-- Android support is not possible at the moment since this library utilizes the `ImageInputStream` class provided by `javax.imageio` package.
 
 #### Usage:
 
