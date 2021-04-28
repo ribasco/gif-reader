@@ -39,7 +39,7 @@ jobs:
       - name: Integration Tests
         run: mvn verify
 
-      - name: Set up fpr Sonatype
+      - name: Set up for Sonatype
         uses: actions/setup-java@v2
         with: # running setup-java again overwrites the settings.xml
           distribution: 'adopt'
